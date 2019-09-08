@@ -8,13 +8,11 @@ default :
 build/ipl.bin : ipl.nas Makefile
 	nasm -l build/ipl.lst -o build/ipl.bin ipl.nas
 
-build/helloos.img : build/ipl.bin Makefile
-	@if [ ! -f build/helloos.img ]; then\
-		fallocate -l 1474560 build/helloos.img;\
-		printf "000200: f0ffff" | xxd -r - build/helloos.img;\
-		printf "001400: f0ffff" | xxd -r - build/helloos.img;\
-	fi
-	dd if=build/ipl.bin of=build/helloos.img bs=512 seek=0 count=512 conv=notrunc
+build/tail.bin : tail.nas Makefile
+	nasm -o build/tail.bin tail.nas
+
+build/helloos.img : build/ipl.bin build/tail.bin Makefile
+	cat build/ipl.bin build/tail.bin > build/helloos.img
 
 # コマンド
 asm :
@@ -28,8 +26,8 @@ run :
 	qemu-system-i386 build/helloos.img
 
 clean :
-	rm -f build/ipl.bin build/ipl.lst
+	-rm build/ipl.bin build/ipl.lst build/tail.bin
 
 src_only :
 	make clean
-	rm -f build/helloos.img
+	-rm build/helloos.img
