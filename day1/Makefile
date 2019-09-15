@@ -5,29 +5,30 @@ default :
 
 # ファイル生成規則
 
-build/ipl.bin : ipl.nas Makefile
-	nasm -l build/ipl.lst -o build/ipl.bin ipl.nas
+build/ipl10.bin : ipl10.nas Makefile
+	nasm -l build/ipl10.lst -o build/ipl10.bin ipl10.nas
 
-build/tail.bin : tail.nas Makefile
-	nasm -o build/tail.bin tail.nas
+build/haribote.sys : haribote.nas Makefile
+	nasm -l build/haribote.lst -o build/haribote.sys haribote.nas
 
-build/helloos.img : build/ipl.bin build/tail.bin Makefile
-	cat build/ipl.bin build/tail.bin > build/helloos.img
+build/hariboteos.img : build/ipl10.bin build/haribote.sys Makefile
+	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
+	mcopy -i build/hariboteos.img build/haribote.sys ::
 
 # コマンド
 asm :
-	make -r build/ipl.bin
+	make -r build/ipl10.bin
 
 img :
-	make -r build/helloos.img
+	make -r build/hariboteos.img
 
 run :
 	make img
-	qemu-system-i386 build/helloos.img
+	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw
 
 clean :
-	-rm build/ipl.bin build/ipl.lst build/tail.bin
+	-rm build/*.bin build/*.lst build/*.sys
 
 src_only :
-	make clean
-	-rm build/helloos.img
+	-rm -r build
+	mkdir build
