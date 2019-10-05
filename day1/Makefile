@@ -5,14 +5,14 @@ default :
 
 # ファイル生成規則
 
-build/asmhead.bin : asmhead.nas
-	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.nas
+build/asmhead.bin : asmhead.asm
+	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.asm
 
 build/bootpack.o : bootpack.c
 	gcc -c -m32 -fno-pic -o build/bootpack.o bootpack.c
 
-build/nasmfunc.o: nasmfunc.nas
-	nasm -f elf32 -o build/nasmfunc.o nasmfunc.nas
+build/nasmfunc.o: nasmfunc.asm
+	nasm -f elf32 -o build/nasmfunc.o nasmfunc.asm
 
 build/bootpack.bin: build/bootpack.o build/nasmfunc.o
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/nasmfunc.o
@@ -20,11 +20,11 @@ build/bootpack.bin: build/bootpack.o build/nasmfunc.o
 build/os.sys: build/asmhead.bin build/bootpack.bin
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
 
-build/ipl10.bin : ipl10.nas Makefile
-	nasm -l build/ipl10.lst -o build/ipl10.bin ipl10.nas
+build/ipl10.bin : ipl10.asm Makefile
+	nasm -l build/ipl10.lst -o build/ipl10.bin ipl10.asm
 
-build/haribote.sys : haribote.nas Makefile
-	nasm -l build/haribote.lst -o build/haribote.sys haribote.nas
+build/haribote.sys : haribote.asm Makefile
+	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
 build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
