@@ -8,11 +8,11 @@ default :
 build/asmhead.bin : asmhead.asm
 	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.asm
 
-build/bootpack.o : bootpack.c
-	gcc -c -m32 -fno-pic -o build/bootpack.o bootpack.c
-
 build/nasmfunc.o: nasmfunc.asm
 	nasm -f elf32 -o build/nasmfunc.o nasmfunc.asm
+
+build/bootpack.o : bootpack.c
+	gcc -c -m32 -fno-pic -o build/bootpack.o bootpack.c
 
 build/bootpack.bin: build/bootpack.o build/nasmfunc.o
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/nasmfunc.o
@@ -40,6 +40,10 @@ img :
 run :
 	make img
 	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw
+
+debug :
+	make img
+	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S &
 
 clean :
 	-rm build/*.bin build/*.lst build/*.sys
