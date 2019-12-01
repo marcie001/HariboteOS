@@ -3,8 +3,10 @@
 
 BITS 32
 
-GLOBAL io_hlt
-GLOBAL write_mem8
+GLOBAL  io_hlt, io_cli, io_sti, io_stihlt
+GLOBAL  io_in8, io_in16, io_in32
+GLOBAL  io_out8, io_out16, io_out32
+GLOBAL  io_load_eflags, io_store_eflags
 
 SECTION .text
 
@@ -12,9 +14,61 @@ io_hlt:
     HLT
     RET
 
-write_mem8: ; void write_mem8(int addr, int data);
-    ; C と連携するときに自由に使える（代入してもよい）レジスタは EAX, ECX, EDX のみ
-    MOV ECX,[ESP+4] ; [ESP+4] にaddrが入っているのでそれを ECX に読み込む
-    MOV AL,[ESP+8] ; [ESP+8] にdataが入っているのでそれを AL に読み込む
-    MOV [ECX],AL
+io_cli:
+    CLI
+    RET
+
+io_sti:
+    STI
+    RET
+
+io_stihlt:
+    STI
+    HLT
+    RET
+
+io_in8: ; void io_in8(int port);
+    MOV EDX,[ESP+4] ; port
+    MOV EAX,0
+    IN  AL,DX
+    RET
+
+io_in16: ; void io_in16(int port);
+    MOV EDX,[ESP+4] ; port
+    MOV EAX,0
+    IN  AX,DX
+    RET
+
+io_in32: ; void io_in16(int port);
+    MOV EDX,[ESP+4] ; port
+    IN  EAX,DX
+    RET
+
+io_out8: ; void io_out8(int port, int data);
+    MOV EDX,[ESP+4] ; port
+    MOV AL,[ESP+8] ; data
+    OUT DX,AL
+    RET
+
+io_out16: ; void io_out16(int port, int data);
+    MOV EDX,[ESP+4] ; port
+    MOV AX,[ESP+8] ; data
+    OUT DX,AX
+    RET
+
+io_out32: ; void io_out32(int port, int data);
+    MOV EDX,[ESP+4] ; port
+    MOV EAX,[ESP+8] ; data
+    OUT DX,EAX
+    RET
+
+io_load_eflags:
+    PUSHFD ; push flags double-word: フラグをダブルワードでスタックに積む
+    POP EAX
+    RET
+
+io_store_eflags:
+    MOV EAX,[ESP+4]
+    PUSH    EAX
+    POPFD ; pop flags double-word: フラグをダブルワードでスタックから取り出す
     RET
