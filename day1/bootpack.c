@@ -43,11 +43,27 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 
 void init_screen(char *vram, int xsize, int ysize);
 
+/**
+ * 文字を描画する
+ * @param vram
+ * @param xsize
+ * @param x
+ * @param y
+ * @param c
+ * @param font
+ */
+void putfont8(char *vram, int xsize, int x, int y, char c, char *font);
+
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0x0ff0;
+    static char font_A[16] = {
+            0x00, 0x18, 0x18, 0x18, 0x18, 0x24, 0x24, 0x24,
+            0x24, 0x7e, 0x42, 0x42, 0x42, 0xe7, 0x00, 0x00
+    };
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
+    putfont8(binfo->vram, binfo->scrnx, 100, 10, COL8_000000, font_A);
 
     while (1) {
         io_hlt();
@@ -121,4 +137,19 @@ void init_screen(char *vram, int xsize, int ysize) {
     boxfill8(vram, xsize, COL8_FFFFFF, xsize - 3, ysize - 24, xsize - 3, ysize - 3);
 
     return;
+}
+
+void putfont8(char *vram, int xsize, int x, int y, char c, char *font) {
+    int i, j, mask;
+    char *p, d;
+    for (i = 0; i < 16; i++) {
+        p = vram + (y + i) * xsize + x;
+        d = font[i];
+        for (j = 0; j < 8; j++) {
+            mask = 0x80 >> j;
+            if ((d & mask) != 0) {
+                p[j] = c;
+            }
+        }
+    }
 }
