@@ -14,8 +14,11 @@ build/nasmfunc.o: nasmfunc.asm
 build/bootpack.o : bootpack.c
 	gcc -c -m32 -fno-pic -o build/bootpack.o bootpack.c
 
-build/bootpack.bin: build/bootpack.o build/nasmfunc.o
-	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/nasmfunc.o
+build/hankaku.o : hankaku.c
+	gcc -c -m32 -fno-pic -o build/hankaku.o hankaku.c
+
+build/bootpack.bin: build/bootpack.o build/hankaku.o build/nasmfunc.o
+	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/hankaku.o build/nasmfunc.o
 
 build/os.sys: build/asmhead.bin build/bootpack.bin
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
