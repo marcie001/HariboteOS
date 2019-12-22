@@ -17,8 +17,8 @@ build/bootpack.o : bootpack.c
 build/hankaku.o : hankaku.c
 	gcc -c -m32 -fno-pic -o build/hankaku.o hankaku.c
 
-build/bootpack.bin: build/bootpack.o build/hankaku.o build/nasmfunc.o
-	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/hankaku.o build/nasmfunc.o
+build/bootpack.bin: build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o
+	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o
 
 build/os.sys: build/asmhead.bin build/bootpack.bin
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
@@ -32,6 +32,9 @@ build/haribote.sys : haribote.asm Makefile
 build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
+
+build/%.o: %.c
+	gcc -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
 
 # コマンド
 asm :
