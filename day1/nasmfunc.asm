@@ -7,6 +7,7 @@ GLOBAL  io_hlt, io_cli, io_sti, io_stihlt
 GLOBAL  io_in8, io_in16, io_in32
 GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
+GLOBAL  load_gdtr, load_idtr
 
 SECTION .text
 
@@ -72,3 +73,16 @@ io_store_eflags:
     PUSH    EAX
     POPFD ; pop flags double-word: フラグをダブルワードでスタックから取り出す
     RET
+
+load_gdtr:  ; void load_gdtr(int limit, int addr);
+    MOV AX,[ESP+4]  ; limit
+    MOV [ESP+6],AX
+    LGDT    [ESP+6]
+    RET
+
+load_idtr:  ; void load_idtr(int limit, int addr);
+    MOV AX,[ESP+4]  ; limit
+    MOV [ESP+6],AX
+    LIDT    [ESP+6]
+    RET
+
