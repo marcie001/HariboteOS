@@ -1,3 +1,4 @@
+OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o build/dsctbl.o build/graphic.o
 # デフォルト動作
 
 default :
@@ -5,22 +6,16 @@ default :
 
 # ファイル生成規則
 
-build/asmhead.bin : asmhead.asm
+build/asmhead.bin : asmhead.asm Makefile
 	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.asm
 
-build/nasmfunc.o: nasmfunc.asm
+build/nasmfunc.o: nasmfunc.asm Makefile
 	nasm -f elf32 -o build/nasmfunc.o nasmfunc.asm
 
-build/bootpack.o : bootpack.c
-	gcc -c -m32 -fno-pic -o build/bootpack.o bootpack.c
+build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
+	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls $(OBJS_BOOTPACK)
 
-build/hankaku.o : hankaku.c
-	gcc -c -m32 -fno-pic -o build/hankaku.o hankaku.c
-
-build/bootpack.bin: build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o
-	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o
-
-build/os.sys: build/asmhead.bin build/bootpack.bin
+build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
 
 build/ipl10.bin : ipl10.asm Makefile
@@ -33,7 +28,9 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 
-build/%.o: %.c
+# 一般規則
+
+build/%.o: %.c Makefile
 	gcc -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
 
 # コマンド
