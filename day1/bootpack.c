@@ -6,6 +6,7 @@ void HariMain(void) {
     int mx, my;
 
     init_gdtidt();
+    init_pic();
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
