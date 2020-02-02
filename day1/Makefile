@@ -2,7 +2,7 @@ OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfun
 # デフォルト動作
 
 default :
-	make img
+	make run
 
 # ファイル生成規則
 
