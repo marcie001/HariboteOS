@@ -30,7 +30,7 @@ io_stihlt:
     HLT
     RET
 
-io_in8: ; void io_in8(int port);
+io_in8: ; int io_in8(int port);
     MOV EDX,[ESP+4] ; port
     MOV EAX,0
     IN  AL,DX
