@@ -1,15 +1,19 @@
 #include "bootpack.h"
 
-extern struct KEYBUF keybuf;
+extern struct FIFO8 keyfifo;
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
-    char s[40], mcursor[256];
+    char s[40], mcursor[256], keybuf[32];
     int mx, my, i;
 
     init_gdtidt();
     init_pic();
     io_sti();
+
+    fifo8_init(&keyfifo, 32, keybuf);
+    io_out8(PIC0_IMR, 0xf9); // PIC1 とキーボードの接続を許可(11111001)
+    io_out8(PIC1_IMR, 0xef); // マウスを許可(11101111)
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -26,20 +30,12 @@ void HariMain(void) {
     mysprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
 
-    io_out8(PIC0_IMR, 0xf9);
-    io_out8(PIC1_IMR, 0xef);
-
     while (1) {
         io_cli();
-        if (keybuf.len == 0) {
+        if (fifo8_status(&keyfifo) == 0) {
             io_stihlt();
         } else {
-            i = keybuf.data[keybuf.next_r];
-            keybuf.len--;
-            keybuf.next_r++;
-            if (keybuf.next_r == 32) {
-                keybuf.next_r = 0;
-            }
+            i = fifo8_get(&keyfifo);
             io_sti();
             mysprintf(s, "%x", i);
             boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 16, 30, 31);

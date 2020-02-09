@@ -6,7 +6,7 @@
 
 #define PORT_KEYDAT               0x0060
 
-struct KEYBUF keybuf;
+struct FIFO8 keyfifo;
 
 /**
  * PIC の初期化
@@ -39,14 +39,7 @@ void inthandler21(int *esp) {
     unsigned char data;
     io_out8(PIC0_OCW2, 0x61); // IRQ-01受付完了をPICに通知
     data = io_in8(PORT_KEYDAT);
-    if (keybuf.len < 32) {
-        keybuf.data[keybuf.next_w] = data;
-        keybuf.len++;
-        keybuf.next_w++;
-        if (keybuf.next_w == 32) {
-            keybuf.next_w = 0;
-        }
-    }
+    fifo8_put(&keyfifo, data);
     return;
 }
 
