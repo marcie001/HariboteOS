@@ -103,7 +103,8 @@ void load_idtr(int limit, int adr);
 
 /* int.c */
 struct KEYBUF {
-    unsigned char data, flag;
+    unsigned char data[32];
+    int next_r, next_w, len;
 };
 
 void init_pic(void);
