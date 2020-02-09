@@ -17,6 +17,8 @@ void io_cli(void);
 
 void io_sti(void);
 
+void io_stihlt(void);
+
 int io_in8(int port);
 
 void io_out8(int port, int data);
@@ -100,6 +102,10 @@ void load_idtr(int limit, int adr);
 #define AR_INTGATE32 0x008e
 
 /* int.c */
+struct KEYBUF {
+    unsigned char data, flag;
+};
+
 void init_pic(void);
 
 #define PIC0_ICW1 0x0020
