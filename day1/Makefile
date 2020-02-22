@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o build/dsctbl.o build/graphic.o build/int.o build/fifo.o
+OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/mysprintf.o build/nasmfunc.o build/dsctbl.o build/graphic.o build/int.o build/fifo.o build/keyboard.o build/mouse.o
 # デフォルト動作
 
 default :

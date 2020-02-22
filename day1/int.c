@@ -31,28 +31,3 @@ void init_pic(void) {
 
     return;
 }
-
-/**
- * PS/2 キーボードからの割り込み
- * @param esp
- */
-void inthandler21(int *esp) {
-    unsigned char data;
-    io_out8(PIC0_OCW2, 0x61); // IRQ-01受付完了をPICに通知
-    data = io_in8(PORT_KEYDAT);
-    fifo8_put(&keyfifo, data);
-    return;
-}
-
-/**
- * PS/2 マウスからの割り込み
- * @param esp
- */
-void inthandler2c(int *esp) {
-    unsigned char data;
-    io_out8(PIC1_OCW2, 0x64); // IRQ-12受付完了をPIC1に通知
-    io_out8(PIC0_OCW2, 0x62); // IRQ-02受付完了をPIC0に通知
-    data = io_in8(PORT_KEYDAT);
-    fifo8_put(&mousefifo, data);
-    return;
-}

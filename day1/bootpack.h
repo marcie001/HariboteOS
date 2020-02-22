@@ -131,6 +131,31 @@ int fifo8_get(struct FIFO8 *fifo);
 
 int fifo8_status(struct FIFO8 *fifo);
 
+/* keyboard.c */
+void inthandler21(int *esp);
+
+void wait_KBC_sendready(void);
+
+void init_keyboard(void);
+
+extern struct FIFO8 keyfifo;
+#define PORT_KEYDAT 0x0060
+#define PORT_KEYCMD 0x0064
+
+/* mouse.c */
+struct MOUSE_DEC {
+    unsigned char buf[3], phase;
+    int x, y, btn;
+};
+
+void inthandler2c(int *esp);
+
+void enable_mouse(struct MOUSE_DEC *mdec);
+
+int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat);
+
+extern struct FIFO8 mousefifo;
+
 /* mysprintf.c */
 void mysprintf(char *str, char *fmt, ...);
 
