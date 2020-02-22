@@ -54,10 +54,10 @@ VRAM    EQU 0x0ff8 ; グラフィックバッファの開始番地
     AND EAX,0x7fffffff ; bit31を0にする（ページング禁止のため）
     OR  EAX,0x00000001 ; bit0を1にする（プロテクトモード移行のため）
     MOV CR0,EAX
-    JMP pipelineflush
+    JMP pipelineflush ; プロテクトモードに切り替えた場合はすぐにJMP命令を実行する必要がある。これは、パイプラインによりすでに実行されている次の命令をやり直してもらうため。
 pipelineflush:
-    MOV AX,1*8 ; 読み書き可能セグメント32bit
-    MOV DS,AX
+    MOV AX,1*8 ; 読み書き可能セグメント32bit。0x0008はgdt+1のセグメントに相当。
+    MOV DS,AX ; 以下CS以外のセグメントレジスタの値を変更
     MOV ES,AX
     MOV FS,AX
     MOV GS,AX
@@ -92,7 +92,7 @@ pipelineflush:
     MOV ECX,[EBX+16]
     ADD ECX,3
     SHR ECX,2 ; ECX /= 4. SHR は右シフト命令
-    JZ  skip ; 転送するべきものがない
+    JZ  skip ; 転送するべきものがない。JZはjump if zero.直前の計算結果が0の場合jump.この場合ECXが0かどうか。
     MOV ESI,[EBX+20] ; 転送元
     ADD ESI,EBX
     MOV EDI,[EBX+12] ; 転送先
@@ -104,6 +104,7 @@ skip:
 waitkbdout:
     IN  AL,0x64
     AND AL,0x02
+    IN  AL,0x60 ; キーボードに溜まっていたキーコードやマスすのデータがあれば空読み。受信バッファが悪さをしないように。
     JNZ waitkbdout ; ANDの結果が 0 でなければ waitkbdout へ
     RET
 
