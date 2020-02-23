@@ -31,7 +31,7 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
 # 一般規則
 
 build/%.o: %.c Makefile
-	gcc -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
+	gcc -Os -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
 
 # コマンド
 asm :

@@ -130,25 +130,3 @@ unsigned int memtest(unsigned int start, unsigned int end) {
 
     return i;
 }
-
-unsigned int memtest_sub(unsigned int start, unsigned int end) {
-    unsigned int i, *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
-    for (i = start; i <= end; i += 0x100000) {
-        p = (unsigned int *) (i + 0xffffc);
-        old = *p; // いじる前の値を覚えておく
-        *p = pat0; // 試しに書いてみる
-        *p ^= 0xffffffff; // そしてそれを反転してみる
-        if (*p != pat1) {
-            not_memory:
-            *p = old;
-            break;
-        }
-        *p ^= 0xffffffff; // もう一度反転してみる
-        if (*p != pat0) {
-            // 元にもどったか
-            goto not_memory;
-        }
-        *p = old; // いじった値をもとに戻す
-    }
-    return i;
-}

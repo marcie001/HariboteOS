@@ -10,6 +10,7 @@ GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  load_cr0, store_cr0
 GLOBAL  asm_inthandler21, asm_inthandler2c
+GLOBAL  memtest_sub
 EXTERN  inthandler21, inthandler2c
 
 SECTION .text
@@ -129,3 +130,36 @@ asm_inthandler2c:
     POP DS
     POP ES
     IRETD
+
+memtest_sub: ; unsigned int memtest_sub(unsigned int start, unsigned int end);
+    PUSH    EDI ; EBX, ESI, EDI も使いたいので
+    PUSH    ESI
+    PUSH    EBX
+    MOV ESI,0xaa55aa55          ; pat0 = 0xaa55aa55;
+    MOV EDI,0x55aa55aa          ; pat1 = 0x55aa55aa;
+    MOV EAX,[ESP+12+4]          ; i = start;
+mts_loop:
+    MOV EBX,EAX
+    ADD EBX,0xffffc             ; p = i + 0xffffc;
+    MOV EDX,[EBX]               ; old = *p;
+    MOV [EBX],ESI               ; *p = pat0;
+    XOR DWORD [EBX],0xffffffff  ; *p ^= 0xffffffff;
+    CMP EDI,[EBX]               ; if (*p != pat1) goto fin;
+    JNE mts_fin
+    XOR DWORD [EBX],0xffffffff  ; *p ^= 0xffffffff;
+    CMP ESI,[EBX]               ; if (*p != pat0) goto fin;
+    JNE mts_fin
+    MOV [EBX],EDX               ; *p = old;
+    ADD EAX,0x100000            ; i+= 0x100000;
+    CMP EAX,[ESP+12+8]          ; if (i <= end) goto mts_loop;
+    JBE mts_loop
+    POP EBX
+    POP ESI
+    POP EDI
+    RET
+mts_fin:
+    MOV [EBX],EDX               ; *p = old
+    POP EBX
+    POP ESI
+    POP EDI
+    RET
