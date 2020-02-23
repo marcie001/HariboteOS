@@ -42,7 +42,7 @@ img :
 
 run :
 	make img
-	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw
+	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -m 2G
 
 debug :
 	make img

@@ -1,6 +1,8 @@
 #include "bootpack.h"
 
-extern struct FIFO8 keyfifo, mousefifo;
+unsigned int memtest(unsigned int start, unsigned int end);
+
+unsigned int memtest_sub(unsigned int start, unsigned int end);
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
@@ -19,6 +21,7 @@ void HariMain(void) {
     io_out8(PIC0_IMR, 0xf9); // PIC1 とキーボードの接続を許可(11111001)
     io_out8(PIC1_IMR, 0xef); // マウスを許可(11101111)
     init_keyboard();
+    enable_mouse(&mdec);
 
     init_palette();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
@@ -35,7 +38,9 @@ void HariMain(void) {
     mysprintf(s, "(%d, %d)", mx, my);
     putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
 
-    enable_mouse(&mdec);
+    i = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+    mysprintf(s, "memory %dMB", i);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 80, COL8_FFFFFF, s);
 
     while (1) {
         io_cli();
@@ -88,4 +93,62 @@ void HariMain(void) {
             }
         }
     }
+}
+
+#define EFLAGS_AC_BIT     0x00040000
+#define CR0_CACHE_DISABLE 0x60000000
+
+unsigned int memtest(unsigned int start, unsigned int end) {
+    char flg486 = 0;
+    unsigned int eflg, cr0, i;
+
+    // 386 か 486 以降なのか確認
+    eflg = io_load_eflags();
+    eflg |= EFLAGS_AC_BIT; // AC-bit = 1
+    io_store_eflags(eflg);
+    eflg = io_load_eflags();
+    if ((eflg & EFLAGS_AC_BIT) != 0) {
+        // 386 では AC = 1 にしても自動で 0 に戻ってしまう
+        flg486 = 1;
+    }
+    eflg &= ~EFLAGS_AC_BIT; // AC-bit = 0
+    io_store_eflags(eflg);
+
+    if (flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 |= CR0_CACHE_DISABLE; // キャッシュ禁止
+        store_cr0(cr0);
+    }
+
+    i = memtest_sub(start, end);
+
+    if (flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 &= ~CR0_CACHE_DISABLE; // キャッシュ許可
+        store_cr0(cr0);
+    }
+
+    return i;
+}
+
+unsigned int memtest_sub(unsigned int start, unsigned int end) {
+    unsigned int i, *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
+    for (i = start; i <= end; i += 0x100000) {
+        p = (unsigned int *) (i + 0xffffc);
+        old = *p; // いじる前の値を覚えておく
+        *p = pat0; // 試しに書いてみる
+        *p ^= 0xffffffff; // そしてそれを反転してみる
+        if (*p != pat1) {
+            not_memory:
+            *p = old;
+            break;
+        }
+        *p ^= 0xffffffff; // もう一度反転してみる
+        if (*p != pat0) {
+            // 元にもどったか
+            goto not_memory;
+        }
+        *p = old; // いじった値をもとに戻す
+    }
+    return i;
 }
