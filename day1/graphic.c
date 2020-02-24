@@ -62,7 +62,7 @@ void init_screen(char *vram, int xsize, int ysize) {
     boxfill8(vram, xsize, COL8_848484, 3, ysize - 4, 59, ysize - 4);
     boxfill8(vram, xsize, COL8_848484, 59, ysize - 23, 59, ysize - 5);
     boxfill8(vram, xsize, COL8_000000, 2, ysize - 3, 59, ysize - 3);
-    boxfill8(vram, xsize, COL8_000000, 60, ysize - 24, 3, ysize - 3);
+    boxfill8(vram, xsize, COL8_000000, 60, ysize - 24, 60, ysize - 3);
 
     boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 24, xsize - 4, ysize - 24);
     boxfill8(vram, xsize, COL8_848484, xsize - 47, ysize - 23, xsize - 47, ysize - 4);
