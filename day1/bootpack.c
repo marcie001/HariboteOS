@@ -34,12 +34,8 @@ void HariMain(void) {
     init_mouse_cursor8(mcursor, COL8_008484);
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
 
-    putfonts8_asc(binfo->vram, binfo->scrnx, 8, 8, COL8_FFFFFF, "ABC 123");
     putfonts8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_000000, "Haribote OS");
     putfonts8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_FFFFFF, "Haribote OS");
-
-    mysprintf(s, "(%d, %d)", mx, my);
-    putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
 
     mysprintf(s, "memory %dMB    free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 80, COL8_FFFFFF, s);
