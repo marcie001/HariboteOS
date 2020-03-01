@@ -38,17 +38,17 @@ void HariMain(void) {
     sheet_setbuf(sht_mouse, buf_mouse, 16, 16, 99); // 透明色番号は99
     init_screen(buf_back, binfo->scrnx, binfo->scrny);
     init_mouse_cursor8(buf_mouse, 99);
-    sheet_slide(shtctl, sht_back, 0, 0);
+    sheet_slide(sht_back, 0, 0);
     mx = (binfo->scrnx - 16) / 2; // 画面中央になるように座標計算
     my = (binfo->scrny - 28 - 16) / 2;
-    sheet_slide(shtctl, sht_mouse, mx, my);
-    sheet_updown(shtctl, sht_back, 0);
-    sheet_updown(shtctl, sht_mouse, 1);
+    sheet_slide(sht_mouse, mx, my);
+    sheet_updown(sht_back, 0);
+    sheet_updown(sht_mouse, 1);
     mysprintf(s, "(%d %d)", mx, my);
     putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s);
     mysprintf(s, "memory %dMB    free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc(buf_back, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
-    sheet_refresh(shtctl, sht_back, 0, 0, binfo->scrnx, 48);
+    sheet_refresh(sht_back, 0, 0, binfo->scrnx, 48);
 
     while (1) {
         io_cli();
@@ -61,7 +61,7 @@ void HariMain(void) {
                 mysprintf(s, "%x", i);
                 boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 100, 30, 115);
                 putfonts8_asc(buf_back, binfo->scrnx, 0, 100, COL8_FFFFFF, s);
-                sheet_refresh(shtctl, sht_back, 0, 100, 31, 116);
+                sheet_refresh(sht_back, 0, 100, 31, 116);
             } else if (fifo8_status(&mousefifo) != 0) {
                 i = fifo8_get(&mousefifo);
                 io_sti();
@@ -78,7 +78,7 @@ void HariMain(void) {
                     }
                     boxfill8(buf_back, binfo->scrnx, COL8_008484, 64, 16, 64 + 8 * 14 - 1, 31);
                     putfonts8_asc(buf_back, binfo->scrnx, 64, 16, COL8_FFFFFF, s);
-                    sheet_refresh(shtctl, sht_back, 64, 16, 64 + 8 * 14, 32);
+                    sheet_refresh(sht_back, 64, 16, 64 + 8 * 14, 32);
                     mx += mdec.x;
                     my += mdec.y;
                     if (mx < 0) {
@@ -96,8 +96,8 @@ void HariMain(void) {
                     mysprintf(s, "(%d, %d)", mx, my);
                     boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 0, 79, 15); // 座標消す
                     putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s); // 座標書く
-                    sheet_refresh(shtctl, sht_back, 0, 0, 80, 16);
-                    sheet_slide(shtctl, sht_mouse, mx, my);
+                    sheet_refresh(sht_back, 0, 0, 80, 16);
+                    sheet_slide(sht_mouse, mx, my);
                 }
             }
         }
