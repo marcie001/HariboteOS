@@ -6,8 +6,8 @@
 
 #define PORT_KEYDAT               0x0060
 
-struct FIFO8 keyfifo;
-struct FIFO8 mousefifo;
+struct FIFO32 keyfifo;
+struct FIFO32 mousefifo;
 
 /**
  * PIC の初期化

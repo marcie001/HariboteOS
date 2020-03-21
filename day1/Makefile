@@ -44,6 +44,10 @@ run :
 	make img
 	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -m 32M
 
+run-vb :
+	make img
+	virtualbox --startvm HariboteOS
+
 debug :
 	make img
 	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S &
