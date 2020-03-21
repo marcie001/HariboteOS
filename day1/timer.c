@@ -24,25 +24,26 @@ void init_pit(void) {
 }
 
 void inthandler20(int *esp) {
-    int i, j;
+    int i;
+    struct TIMER *timer;
     io_out8(PIC0_OCW2, 0x60); // IRQ-00受付完了をPICに通知
     timerctl.count++;
     if (timerctl.next > timerctl.count) {
         return;
     }
+    timer = timerctl.t0;
     for (i = 0; i < timerctl.using; ++i) {
-        if (timerctl.timers[i]->timeout > timerctl.count) {
+        if (timer->timeout > timerctl.count) {
             break;
         }
-        timerctl.timers[i]->flags = TIMER_FLAGS_ALLOC;
-        fifo32_put(timerctl.timers[i]->fifo, timerctl.timers[i]->data);
+        timer->flags = TIMER_FLAGS_ALLOC;
+        fifo32_put(timer->fifo, timer->data);
+        timer = timer->next;
     }
     timerctl.using -= i;
-    for (j = 0; j < timerctl.using; ++j) {
-        timerctl.timers[j] = timerctl.timers[i + j];
-    }
+    timerctl.t0 = timer;
     if (timerctl.using > 0) {
-        timerctl.next = timerctl.timers[0]->timeout;
+        timerctl.next = timerctl.t0->timeout;
     } else {
         timerctl.next = 0xffffffff;
     }
@@ -75,20 +76,43 @@ void timer_settime(struct TIMER *timer, unsigned int timeout) {
     timer->flags = TIMER_FLAGS_USING;
     int e = io_load_eflags();
     io_cli();
+    timerctl.using++;
+    if (timerctl.using == 1) {
+        // 動作中のタイマはこれ1つの場合
+        timerctl.t0 = timer;
+        timer->next = 0;
+        timerctl.next = timer->timeout;
+        io_store_eflags(e);
+        return;
+    }
+    struct TIMER *t = timerctl.t0;
+    if (timer->timeout <= t->timeout) {
+        // 先頭に入れる場合
+        timerctl.t0 = timer;
+        timer->next = t;
+        timerctl.next = timer->timeout;
+        io_store_eflags(e);
+        return;
+    }
     // どこにいれればいいか探す
-    int i;
-    for (i = 0; i < timerctl.using; ++i) {
-        if (timerctl.timers[i]->timeout >= timer->timeout) {
+    struct TIMER *s;
+    while (1) {
+        s = t;
+        t = t->next;
+        if (t == 0) {
             break;
         }
+        if (timer->timeout <= t->timeout) {
+            // sとtの間に入れる場合
+            s->next = timer;
+            timer->next = t;
+            io_store_eflags(e);
+            return;
+        }
     }
-    for (int j = timerctl.using; j > i; j--) {
-        timerctl.timers[j] = timerctl.timers[j - 1];
-    }
-    timerctl.using++;
-    // あいたすきまにいれる
-    timerctl.timers[i] = timer;
-    timerctl.next = timerctl.timers[0]->timeout;
+    // いちばん後ろに入れる場合
+    s->next = timer;
+    timer->next = 0;
     io_store_eflags(e);
     return;
 }
