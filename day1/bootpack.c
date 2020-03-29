@@ -76,6 +76,8 @@ void HariMain(void) {
     sheet_updown(sht_mouse, 3);
     mysprintf(s, "memory %dMB    free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc_sht(sht_win_mem, 20, 28, COL8_000000, COL8_C6C6C6, s, 32);
+    mysprintf(s, "%dx%d-%dbit", binfo->scrnx, binfo->scrny, binfo->vmode);
+    putfonts8_asc_sht(sht_back, 0, 132, COL8_FFFFFF, COL8_008484, s, 15);
 
     while (1) {
         count++;
