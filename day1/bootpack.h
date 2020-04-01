@@ -43,6 +43,10 @@ void asm_inthandler2c(void);
 
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 
+void load_tr(int tr);
+
+void taskswitch4(void);
+
 /* graphic.c */
 void init_palette(void);
 
@@ -108,6 +112,7 @@ void load_idtr(int limit, int adr);
 #define AR_DATA32_RW 0x4092
 #define AR_CODE32_ER 0x409a
 #define AR_INTGATE32 0x008e
+#define AR_TSS32 0x0089
 
 /* int.c */
 struct FIFO32 {
