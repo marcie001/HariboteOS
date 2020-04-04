@@ -25,7 +25,7 @@ void HariMain(void) {
     struct FIFO32 fifo;
     char s[40];
     int fifobuf[128];
-    struct TIMER *timer, *timer2, *timer3, *timer_ts;
+    struct TIMER *timer, *timer2, *timer3;
     int mx, my, i, cursor_c = COL8_FFFFFF, cursor_x = 8;
     unsigned int memtotal;
     struct MOUSE_DEC mdec;
@@ -70,9 +70,6 @@ void HariMain(void) {
     timer3 = timer_alloc();
     timer_init(timer3, &fifo, 1);
     timer_settime(timer3, 50);
-    timer_ts = timer_alloc();
-    timer_init(timer_ts, &fifo, 2);
-    timer_settime(timer_ts, 2);
 
     init_keyboard(&fifo, 256);
     enable_mouse(&fifo, 512, &mdec);
@@ -142,6 +139,7 @@ void HariMain(void) {
     tss_b.fs = 1 * 8;
     tss_b.gs = 1 * 8;
     *((int *) (task_b_esp + 4)) = (int) sht_back;
+    mt_init();
 
     while (1) {
         io_cli();
@@ -150,10 +148,7 @@ void HariMain(void) {
         } else {
             i = fifo32_get(&fifo);
             io_sti();
-            if (i == 2) {
-                farjmp(0, 4 * 8);
-                timer_settime(timer_ts, 2);
-            } else if (256 <= i && i <= 511) {
+            if (256 <= i && i <= 511) {
                 // キーボードデータ
                 mysprintf(s, "%x", i - 256);
                 putfonts8_asc_sht(sht_back, 0, 116, COL8_FFFFFF, COL8_008484, s, 4);
@@ -212,7 +207,6 @@ void HariMain(void) {
                 }
             } else if (i == 10) {
                 putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
-                farjmp(0, 4 * 8);
             } else if (i == 3) {
                 putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
             } else if (i <= 1) {
@@ -318,17 +312,14 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
 
 void task_b_main(struct SHEET *sht_back) {
     struct FIFO32 fifo;
-    struct TIMER *timer_ts, *timer_put, *timer_1s;
+    struct TIMER *timer_put, *timer_1s;
     int i, fifobuf[128], count = 0, count0 = 0;
     char s[11];
 
     fifo32_init(&fifo, 128, fifobuf);
-    timer_ts = timer_alloc();
-    timer_init(timer_ts, &fifo, 2);
-    timer_settime(timer_ts, 2);
     timer_put = timer_alloc();
     timer_init(timer_put, &fifo, 1);
-    // timer_settime(timer_put, 1);
+    timer_settime(timer_put, 1);
     timer_1s = timer_alloc();
     timer_init(timer_1s, &fifo, 100);
     timer_settime(timer_1s, 100);
@@ -344,9 +335,6 @@ void task_b_main(struct SHEET *sht_back) {
                 mysprintf(s, "%d", count);
                 putfonts8_asc_sht(sht_back, 0, 148, COL8_FFFFFF, COL8_008484, s, 10);
                 timer_settime(timer_put, 1);
-            } else if (i == 2) {
-                farjmp(0, 3 * 8);
-                timer_settime(timer_ts, 2);
             } else if (i == 100) {
                 mysprintf(s, "%d", count - count0);
                 putfonts8_asc_sht(sht_back, 0, 164, COL8_FFFFFF, COL8_008484, s, 10);
