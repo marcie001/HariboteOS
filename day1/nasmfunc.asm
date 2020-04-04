@@ -11,7 +11,7 @@ GLOBAL  load_gdtr, load_idtr
 GLOBAL  load_cr0, store_cr0
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler2c
 GLOBAL  memtest_sub
-GLOBAL  load_tr, taskswitch4
+GLOBAL  load_tr, farjmp
 EXTERN  inthandler20, inthandler21, inthandler2c
 
 SECTION .text
@@ -185,10 +185,14 @@ load_tr:    ; void load_tr(int tr);
     LTR [ESP+4] ; tr
     RET
 
+farjmp: ; void farjmp(int eip, int cs);
+    JMP FAR [ESP+4] ; eip, cs
+    RET
+
 ; JMP がタスクスイッチ（ far-JMP ）の場合、
 ; タスクスイッチ後にまたこのタスクに戻ってきたときにここから処理が再開されるので、
 ; 次行の RET 命令が必要。
 ; また、 far-JMP の場合、セグメント（:より前の部分）が TSS を指す。番地（:より後ろの部分）は無視される。番地は普通 0 にしておく。
-taskswitch4:    ; void taskswitch4(void);
-    JMP 4*8:0
-    RET
+; taskswitch4:    ; void taskswitch4(void);
+;     JMP 4*8:0
+;     RET

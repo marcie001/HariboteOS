@@ -45,7 +45,7 @@ unsigned int memtest_sub(unsigned int start, unsigned int end);
 
 void load_tr(int tr);
 
-void taskswitch4(void);
+void farjmp(int eip, int cs);
 
 /* graphic.c */
 void init_palette(void);

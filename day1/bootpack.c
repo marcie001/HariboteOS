@@ -4,7 +4,7 @@ void make_window8(unsigned char *buf, int xsize, int ysize, char *title);
 
 void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, int l);
 
-void task_b_main(void);
+void task_b_main(struct SHEET *sht_back);
 
 /**
  * TSS32 はtask status segment
@@ -25,7 +25,7 @@ void HariMain(void) {
     struct FIFO32 fifo;
     char s[40];
     int fifobuf[128];
-    struct TIMER *timer, *timer2, *timer3;
+    struct TIMER *timer, *timer2, *timer3, *timer_ts;
     int mx, my, i, cursor_c = COL8_FFFFFF, cursor_x = 8;
     unsigned int memtotal;
     struct MOUSE_DEC mdec;
@@ -70,6 +70,9 @@ void HariMain(void) {
     timer3 = timer_alloc();
     timer_init(timer3, &fifo, 1);
     timer_settime(timer3, 50);
+    timer_ts = timer_alloc();
+    timer_init(timer_ts, &fifo, 2);
+    timer_settime(timer_ts, 2);
 
     init_keyboard(&fifo, 256);
     enable_mouse(&fifo, 512, &mdec);
@@ -82,6 +85,7 @@ void HariMain(void) {
     init_palette();
     shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
     sht_back = sheet_alloc(shtctl);
+    *((int *) 0x0fec) = (int) sht_back; // sht_backの番地を0x0fecに記録
     sht_mouse = sheet_alloc(shtctl);
     sht_win = sheet_alloc(shtctl);
     sht_win_mem = sheet_alloc(shtctl);
@@ -118,7 +122,8 @@ void HariMain(void) {
     tss_b.iomap = 0x40000000;
     set_segmdesc(gdt + 3, 103, (int) &tss_a, AR_TSS32);
     set_segmdesc(gdt + 4, 103, (int) &tss_b, AR_TSS32);
-    task_b_esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024; // esp はスタックの最終番地を示すようにする
+    // esp はスタックの最終番地から8（引数はESP+4番地。task_b_mainの第1引数はintつまり4byte）を引いた値
+    task_b_esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;
     load_tr(3 * 8);
     tss_b.eip = (int) &task_b_main;
     tss_b.eflags = 0x00000202; // IF = 1
@@ -136,7 +141,7 @@ void HariMain(void) {
     tss_b.ds = 1 * 8;
     tss_b.fs = 1 * 8;
     tss_b.gs = 1 * 8;
-
+    *((int *) (task_b_esp + 4)) = (int) sht_back;
 
     while (1) {
         io_cli();
@@ -145,7 +150,10 @@ void HariMain(void) {
         } else {
             i = fifo32_get(&fifo);
             io_sti();
-            if (256 <= i && i <= 511) {
+            if (i == 2) {
+                farjmp(0, 4 * 8);
+                timer_settime(timer_ts, 2);
+            } else if (256 <= i && i <= 511) {
                 // キーボードデータ
                 mysprintf(s, "%x", i - 256);
                 putfonts8_asc_sht(sht_back, 0, 116, COL8_FFFFFF, COL8_008484, s, 4);
@@ -204,7 +212,7 @@ void HariMain(void) {
                 }
             } else if (i == 10) {
                 putfonts8_asc_sht(sht_back, 0, 64, COL8_FFFFFF, COL8_008484, "10[sec]", 7);
-                taskswitch4();
+                farjmp(0, 4 * 8);
             } else if (i == 3) {
                 putfonts8_asc_sht(sht_back, 0, 80, COL8_FFFFFF, COL8_008484, "3[sec]", 6);
             } else if (i <= 1) {
@@ -308,8 +316,45 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
     return;
 }
 
-void task_b_main(void) {
+void task_b_main(struct SHEET *sht_back) {
+    struct FIFO32 fifo;
+    struct TIMER *timer_ts, *timer_put, *timer_1s;
+    int i, fifobuf[128], count = 0, count0 = 0;
+    char s[11];
+
+    fifo32_init(&fifo, 128, fifobuf);
+    timer_ts = timer_alloc();
+    timer_init(timer_ts, &fifo, 2);
+    timer_settime(timer_ts, 2);
+    timer_put = timer_alloc();
+    timer_init(timer_put, &fifo, 1);
+    // timer_settime(timer_put, 1);
+    timer_1s = timer_alloc();
+    timer_init(timer_1s, &fifo, 100);
+    timer_settime(timer_1s, 100);
     while (1) {
-        io_hlt();
+        count++;
+        io_cli();
+        if (fifo32_status(&fifo) == 0) {
+            io_stihlt();
+        } else {
+            i = fifo32_get(&fifo);
+            io_sti();
+            if (i == 1) {
+                mysprintf(s, "%d", count);
+                putfonts8_asc_sht(sht_back, 0, 148, COL8_FFFFFF, COL8_008484, s, 10);
+                timer_settime(timer_put, 1);
+            } else if (i == 2) {
+                farjmp(0, 3 * 8);
+                timer_settime(timer_ts, 2);
+            } else if (i == 100) {
+                mysprintf(s, "%d", count - count0);
+                putfonts8_asc_sht(sht_back, 0, 164, COL8_FFFFFF, COL8_008484, s, 10);
+                count0 = count;
+                timer_settime(timer_1s, 100);
+            }
+        }
     }
+    // return は書かない。 return は呼び出し元への JMP 命令のようなものだから。この関数は呼び出し元がないので。
+    // ちなみに、return 先の番地は [ESP] にある
 }
