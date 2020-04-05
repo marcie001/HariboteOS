@@ -269,11 +269,46 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data);
 void timer_settime(struct TIMER *timer, unsigned int timeout);
 
 /* mtask.c */
-extern struct TIMER *mt_timer;
+#define MAX_TASKS 1000 // 最大タスク数
+#define TASK_GDT0 3 // TSSをGDTの何番から割り当てるか
 
-void mt_init(void);
+/**
+ * TSS32 はtask status segment
+ */
+struct TSS32 {
+    // タスクの設定に関する内容。タスクスイッチしてもCPUからは書き込まれない
+    int backlink, esp0, ss0, esp1, ss1, esp2, ss2, cr3;
+    // 32 bit のレジスタ
+    int eip, eflags, eax, ecx, edx, ebx, esp, ebp, esi, edi;
+    // 16 bit のレジスタ
+    int es, cs, ss, ds, fs, gs;
+    // タスク設定に関する部分
+    int ldtr, iomap;
+};
 
-void mt_taskswitch(void);
+struct TASK {
+    int sel, flags; // sel は GDT の番号のこと。 selector
+    struct TSS32 tss;
+};
+
+struct TASKCTL {
+    int running; // 動作しているタスクの数
+    int now; // 現在動作しているタスクがどれだかわかるようにするための変数
+    struct TASK *tasks[MAX_TASKS];
+    struct TASK tasks0[MAX_TASKS];
+};
+
+struct TASK *task_init(struct MEMMAN *memman);
+
+struct TASK *task_alloc(void);
+
+void task_run(struct TASK *task);
+
+void task_switch(void);
+
+extern struct TASKCTL *taskctl;
+
+extern struct TIMER *task_timer;
 
 /* mysprintf.c */
 void mysprintf(char *str, char *fmt, ...);
