@@ -33,8 +33,6 @@ void HariMain(void) {
             0,   0,   0,   '_', 0,   0,   0,   0,   0,   0,   0,   0,   0,   '\\',0,   0,
     };
     // @formatter:on
-    struct TSS32 tss_a, tss_b;
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
 
     // ハードウェアがいろいろなデータを溜め込んで不具合を起こさないうちに早く割り込みを受け付けられるように
     // まずGDT/IDTを作り直し、PICを初期化してio_stiを呼び出す
@@ -42,7 +40,7 @@ void HariMain(void) {
     init_pic();
     io_sti();
 
-    fifo32_init(&fifo, 128, fifobuf);
+    fifo32_init(&fifo, 128, fifobuf, 0);
     init_pit();
     io_out8(PIC0_IMR, 0xf8); // PITとPIC1とキーボードを許可（11111000)
     io_out8(PIC1_IMR, 0xef); // マウスを許可(11101111)
@@ -99,7 +97,8 @@ void HariMain(void) {
     mysprintf(s, "%dx%d-%dbit", binfo->scrnx, binfo->scrny, binfo->vmode);
     putfonts8_asc_sht(sht_back, 0, 132, COL8_FFFFFF, COL8_008484, s, 15);
 
-    task_init(memman);
+    struct TASK *task_a = task_init(memman);
+    fifo.task = task_a;
     struct TASK *task_b = task_alloc();
     task_b->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;
     task_b->tss.eip = (int) &task_b_main;
@@ -115,7 +114,8 @@ void HariMain(void) {
     while (1) {
         io_cli();
         if (fifo32_status(&fifo) == 0) {
-            io_stihlt();
+            task_sleep(task_a);
+            io_sti();
         } else {
             i = fifo32_get(&fifo);
             io_sti();
@@ -287,7 +287,7 @@ void task_b_main(struct SHEET *sht_back) {
     int i, fifobuf[128], count = 0, count0 = 0;
     char s[11];
 
-    fifo32_init(&fifo, 128, fifobuf);
+    fifo32_init(&fifo, 128, fifobuf, 0);
     timer_put = timer_alloc();
     timer_init(timer_put, &fifo, 1);
     timer_settime(timer_put, 1);

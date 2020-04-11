@@ -118,6 +118,7 @@ void load_idtr(int limit, int adr);
 struct FIFO32 {
     int *buf;
     int p, q, size, free, flags;
+    struct TASK *task;
 };
 
 void init_pic(void);
@@ -136,7 +137,7 @@ void init_pic(void);
 #define PIC1_ICW4 0x00a1
 
 /* fifo.c */
-void fifo32_init(struct FIFO32 *fifo, int size, int *buf);
+void fifo32_init(struct FIFO32 *fifo, int size, int *buf, struct TASK *task);
 
 int fifo32_put(struct FIFO32 *fifo, int data);
 
@@ -305,6 +306,8 @@ struct TASK *task_alloc(void);
 void task_run(struct TASK *task);
 
 void task_switch(void);
+
+void task_sleep(struct TASK *task);
 
 extern struct TASKCTL *taskctl;
 
