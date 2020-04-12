@@ -16,12 +16,13 @@ struct TASK *task_init(struct MEMMAN *memman) {
     }
     struct TASK *task = task_alloc();
     task->flags = 2; //動作中マーク
+    task->priority = 2;
     taskctl->running = 1;
     taskctl->now = 0;
     taskctl->tasks[0] = task;
     load_tr(task->sel);
     task_timer = timer_alloc();
-    timer_settime(task_timer, 2);
+    timer_settime(task_timer, task->priority);
     return task;
 }
 
@@ -50,21 +51,31 @@ struct TASK *task_alloc(void) {
     return 0;
 }
 
-void task_run(struct TASK *task) {
-    task->flags = 2; // 動作中マーク
-    taskctl->tasks[taskctl->running] = task;
-    taskctl->running++;
+void task_run(struct TASK *task, int priority) {
+    // priority が 0 以下の場合は優先度を変更しない
+    if (priority > 0) {
+        task->priority = priority;
+    }
+    // タスク実行中でも priority を変更できるようにチェック
+    if (task->flags != 2) {
+        task->flags = 2; // 動作中マーク
+        taskctl->tasks[taskctl->running] = task;
+        taskctl->running++;
+    }
     return;
 }
 
 void task_switch(void) {
-    timer_settime(task_timer, 2);
+    taskctl->now++;
+    if (taskctl->now == taskctl->running) {
+        taskctl->now = 0;
+    }
+    struct TASK *task = taskctl->tasks[taskctl->now];
+    timer_settime(task_timer, task->priority);
     if (taskctl->running >= 2) {
-        taskctl->now++;
-        if (taskctl->now == taskctl->running) {
-            taskctl->now = 0;
-        }
-        farjmp(0, taskctl->tasks[taskctl->now]->sel);
+        // タスクが1つしかないときにfarjmpすると、切り替わらないけど、タスクスイッチすることになる。
+        // このとき CPU は実行を拒否してひどいことになるので、タスクが2以上あることを確認している。
+        farjmp(0, task->sel);
     }
     return;
 }
