@@ -326,6 +326,8 @@ void task_remove(struct TASK *task);
 
 void task_switchsub(void);
 
+void task_idle(void);
+
 extern struct TASKCTL *taskctl;
 
 extern struct TIMER *task_timer;

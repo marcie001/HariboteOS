@@ -27,6 +27,17 @@ struct TASK *task_init(struct MEMMAN *memman) {
     load_tr(task->sel);
     task_timer = timer_alloc();
     timer_settime(task_timer, task->priority);
+
+    struct TASK *idle = task_alloc();
+    idle->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024;
+    idle->tss.eip = (int) &task_idle;
+    idle->tss.es = 1 * 8;
+    idle->tss.cs = 2 * 8;
+    idle->tss.ss = 1 * 8;
+    idle->tss.ds = 1 * 8;
+    idle->tss.fs = 1 * 8;
+    idle->tss.gs = 1 * 8;
+    task_run(idle, MAX_TASKLEVELS - 1, 1);
     return task;
 }
 
@@ -159,4 +170,10 @@ void task_switchsub(void) {
     taskctl->now_lv = i;
     taskctl->lv_change = 0;
     return;
+}
+
+void task_idle(void) {
+    while (1) {
+        io_hlt();
+    }
 }
