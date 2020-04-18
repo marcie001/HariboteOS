@@ -42,9 +42,10 @@ struct TASK *task_init(struct MEMMAN *memman) {
 }
 
 struct TASK *task_alloc(void) {
+    struct TASK *task;
     for (int i = 0; i < MAX_TASKS; ++i) {
         if (taskctl->tasks0[i].flags == 0) {
-            struct TASK *task = &taskctl->tasks0[i];
+            task = &taskctl->tasks0[i];
             task->flags = 1; // 使用中マーク
             task->tss.eflags = 0x00000202; // IF = 1
             task->tss.eax = 0; // とりあえず 0 にしておく

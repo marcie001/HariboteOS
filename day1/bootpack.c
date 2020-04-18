@@ -114,32 +114,42 @@ void HariMain(void) {
     mysprintf(s, "memory %dMB free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 
-    int key_to = 0;
+    int i, key_to = 0;
     while (1) {
         io_cli();
         if (fifo32_status(&fifo) == 0) {
             task_sleep(task_a);
             io_sti();
         } else {
-            int i = fifo32_get(&fifo);
+            i = fifo32_get(&fifo);
             io_sti();
             if (256 <= i && i <= 511) {
                 // キーボードデータ
                 mysprintf(s, "%x", i - 256);
                 putfonts8_asc_sht(sht_back, 0, 116, COL8_FFFFFF, COL8_008484, s, 4);
-                if (i < 256 + 0x80) {
-                    if (keytable[i - 256] != 0 && keytable[i - 256] != 0 && cursor_x < 144) {
-                        // 通常の文字
-                        s[0] = keytable[i - 256];
-                        s[1] = 0;
-                        putfonts8_asc_sht(sht_win, cursor_x, 28, COL8_000000, COL8_FFFFFF, s, 1);
-                        cursor_x += 8;
+                if (i < 256 + 0x80 && keytable[i - 256] != 0) {
+                    // 通常の文字
+                    if (key_to == 0) {
+                        if (cursor_x < 144) {
+                            s[0] = keytable[i - 256];
+                            s[1] = 0;
+                            putfonts8_asc_sht(sht_win, cursor_x, 28, COL8_000000, COL8_FFFFFF, s, 1);
+                            cursor_x += 8;
+                        }
+                    } else {
+                        fifo32_put(&task_cons->fifo, keytable[i - 256] + 256);
                     }
                 }
-                if (i == 256 + 0x0e && cursor_x > 8) {
+                if (i == 256 + 0x0e) {
                     // バックスペース
-                    putfonts8_asc_sht(sht_win, cursor_x, 28, COL8_000000, COL8_FFFFFF, " ", 1);
-                    cursor_x -= 8;
+                    if (key_to == 0) {
+                        if (cursor_x > 8) {
+                            putfonts8_asc_sht(sht_win, cursor_x, 28, COL8_000000, COL8_FFFFFF, " ", 1);
+                            cursor_x -= 8;
+                        }
+                    } else {
+                        fifo32_put(&task_cons->fifo, 8 + 256);
+                    }
                 }
                 if (i == 256 + 0x0f) {
                     // Tab
@@ -160,7 +170,7 @@ void HariMain(void) {
                 sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
             } else if (512 <= i && i <= 767) {
                 // マウスデータ
-                if (mouse_decode(&mdec, i) != 0) {
+                if (mouse_decode(&mdec, i - 512) != 0) {
                     mysprintf(s, "[lcr %d %d]", mdec.x, mdec.y);
                     if ((mdec.btn & 0x01) != 0) {
                         s[1] = 'L';
@@ -254,7 +264,7 @@ void make_wtitle8(unsigned char *buf, int xsize, char *title, char act) {
     boxfill8(buf, xsize, tbc, 3, 3, xsize - 4, 20);
     putfonts8_asc(buf, xsize, 24, 4, tc, title);
     for (y = 0; y < 14; y++) {
-        for (int x = 0; x < 16; x++) {
+        for (x = 0; x < 16; x++) {
             c = closebtn[y][x];
             switch (c) {
                 case '@':
@@ -296,7 +306,7 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
     int x1 = x0 + sx, y1 = y0 + sy;
     boxfill8(sht->buf, sht->bxsize, COL8_848484, x0 - 2, y0 - 3, x1 + 1, y0 - 3);
-    boxfill8(sht->buf, sht->bxsize, COL8_848484, x0 - 3, y0 - 3, x1 - 3, y1 + 1);
+    boxfill8(sht->buf, sht->bxsize, COL8_848484, x0 - 3, y0 - 3, x0 - 3, y1 + 1);
     boxfill8(sht->buf, sht->bxsize, COL8_FFFFFF, x0 - 3, y1 + 2, x1 + 1, y1 + 2);
     boxfill8(sht->buf, sht->bxsize, COL8_FFFFFF, x1 + 2, y0 - 3, x1 + 2, y1 + 2);
     boxfill8(sht->buf, sht->bxsize, COL8_000000, x0 - 1, y0 - 2, x1 + 0, y0 - 2);
@@ -308,36 +318,62 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
 }
 
 void console_task(struct SHEET *sheet) {
-    struct FIFO32 fifo;
     struct TASK *task = task_now();
-    int fifobuf[128], cursor_x = 8, cursor_c = COL8_000000;
+    int fifobuf[128], cursor_x = 16, cursor_c = COL8_000000;
 
-    fifo32_init(&fifo, 128, fifobuf, task);
+    fifo32_init(&task->fifo, 128, fifobuf, task);
 
     struct TIMER *timer = timer_alloc();
-    timer_init(timer, &fifo, 1);
+    timer_init(timer, &task->fifo, 1);
     timer_settime(timer, 50);
+
+    // プロンプト表示
+    putfonts8_asc_sht(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);
+
+    char s[2];
+    int i;
     while (1) {
         io_cli();
-        if (fifo32_status(&fifo) == 0) {
+        if (fifo32_status(&task->fifo) == 0) {
             task_sleep(task);
             io_sti();
         } else {
-            int i = fifo32_get(&fifo);
+            i = fifo32_get(&task->fifo);
             io_sti();
             if (i <= 1) {
                 // カーソル用タイマ
                 if (i != 0) {
-                    timer_init(timer, &fifo, 0);
+                    timer_init(timer, &task->fifo, 0);
                     cursor_c = COL8_FFFFFF;
                 } else {
-                    timer_init(timer, &fifo, 1);
+                    timer_init(timer, &task->fifo, 1);
                     cursor_c = COL8_000000;
                 }
                 timer_settime(timer, 50);
-                boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
-                sheet_refresh(sheet, cursor_x, 28, cursor_x + 8, 44);
             }
+            if (256 <= i && i <= 511) {
+                // キーボードデータ
+                if (i == 8 + 256) {
+                    // バックスペース
+                    if (cursor_x > 16) {
+                        // カーソルをスペースで消してから、カーソルを1つ戻す
+                        putfonts8_asc_sht(sheet, cursor_x, 28, COL8_FFFFFF, COL8_000000, " ", 1);
+                        cursor_x -= 8;
+                    }
+                } else {
+                    // 一般文字
+                    if (cursor_x < 240) {
+                        // 1文字表示してから、カーソルを1つ進める
+                        s[0] = i - 256;
+                        s[1] = 0;
+                        putfonts8_asc_sht(sheet, cursor_x, 28, COL8_FFFFFF, COL8_000000, s, 1);
+                        cursor_x += 8;
+                    }
+                }
+            }
+            // カーソル再表示
+            boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+            sheet_refresh(sheet, cursor_x, 28, cursor_x + 8, 44);
         }
     }
     // return は書かない。 return は呼び出し元への JMP 命令のようなものだから。この関数は呼び出し元がないので。
