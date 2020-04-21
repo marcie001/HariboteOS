@@ -124,7 +124,9 @@ void HariMain(void) {
     mysprintf(s, "memory %dMB free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 
-    int i, key_to = 0, key_shift = 0;
+    int i, key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7;
+    mysprintf(s, "CAPSLOCK %x", binfo->leds);
+    putfonts8_asc_sht(sht_back, 0, 300, COL8_FFFFFF, COL8_008484, s, 20);
     while (1) {
         io_cli();
         if (fifo32_status(&fifo) == 0) {
@@ -146,6 +148,12 @@ void HariMain(void) {
                     }
                 } else {
                     s[0] = 0;
+                }
+                if ('A' <= s[0] && s[0] <= 'Z') {
+                    if (((key_leds & 4) == 0 && key_shift == 0) ||
+                        ((key_shift & 4) != 0 && key_shift != 0)) {
+                        s[0] += 0x20; // 大文字を小文字に変換
+                    }
                 }
                 if (s[0] != 0) {
                     // 通常文字
