@@ -194,10 +194,19 @@ void HariMain(void) {
                         key_to = 1;
                         make_wtitle8(buf_win, sht_win->bxsize, "task_a", 0);
                         make_wtitle8(buf_cons, sht_cons->bxsize, "console", 1);
+                        // カーソル非表示
+                        cursor_c = -1;
+                        boxfill8(sht_win->buf, sht_win->bxsize, COL8_FFFFFF, cursor_x, 28, cursor_x + 7, 43);
+                        // コンソールのカーソルON
+                        fifo32_put(&task_cons->fifo, 2);
                     } else {
                         key_to = 0;
                         make_wtitle8(buf_win, sht_win->bxsize, "task_a", 1);
                         make_wtitle8(buf_cons, sht_cons->bxsize, "console", 0);
+                        // カーソル表示
+                        cursor_c = COL8_000000;
+                        // コンソールのカーソルOFF
+                        fifo32_put(&task_cons->fifo, 3);
                     }
                     sheet_refresh(sht_win, 0, 0, sht_win->bxsize, 21);
                     sheet_refresh(sht_cons, 0, 0, sht_cons->bxsize, 21);
@@ -246,7 +255,9 @@ void HariMain(void) {
                     io_out8(PORT_KEYDAT, keycmd_wait);
                 }
                 // カーソル再表示
-                boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+                if (cursor_c >= 0) {
+                    boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+                }
                 sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
             } else if (512 <= i && i <= 767) {
                 // マウスデータ
@@ -288,14 +299,20 @@ void HariMain(void) {
                 // カーソル用タイマ
                 if (i != 0) {
                     timer_init(timer, &fifo, 0); // 次はデータを0とする
-                    cursor_c = COL8_000000;
+                    if (cursor_c >= 0) {
+                        cursor_c = COL8_000000;
+                    }
                 } else {
                     timer_init(timer, &fifo, 1);
-                    cursor_c = COL8_FFFFFF;
+                    if (cursor_c >= 0) {
+                        cursor_c = COL8_FFFFFF;
+                    }
                 }
                 timer_settime(timer, 50);
-                boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
-                sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
+                if (cursor_c >= 0) {
+                    boxfill8(sht_win->buf, sht_win->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+                    sheet_refresh(sht_win, cursor_x, 28, cursor_x + 8, 44);
+                }
             }
         }
     }
@@ -399,7 +416,7 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
 
 void console_task(struct SHEET *sheet) {
     struct TASK *task = task_now();
-    int fifobuf[128], cursor_x = 16, cursor_c = COL8_000000;
+    int fifobuf[128], cursor_x = 16, cursor_c = -1;
 
     fifo32_init(&task->fifo, 128, fifobuf, task);
 
@@ -424,12 +441,23 @@ void console_task(struct SHEET *sheet) {
                 // カーソル用タイマ
                 if (i != 0) {
                     timer_init(timer, &task->fifo, 0);
-                    cursor_c = COL8_FFFFFF;
+                    if (cursor_c >= 0) {
+                        cursor_c = COL8_FFFFFF;
+                    }
                 } else {
                     timer_init(timer, &task->fifo, 1);
-                    cursor_c = COL8_000000;
+                    if (cursor_c >= 0) {
+                        cursor_c = COL8_000000;
+                    }
                 }
                 timer_settime(timer, 50);
+            }
+            if (i == 2) {
+                cursor_c = COL8_FFFFFF;
+            }
+            if (i == 3) {
+                boxfill8(sheet->buf, sheet->bxsize, COL8_000000, cursor_x, 28, cursor_x + 7, 43);
+                cursor_c = -1;
             }
             if (256 <= i && i <= 511) {
                 // キーボードデータ
@@ -452,7 +480,9 @@ void console_task(struct SHEET *sheet) {
                 }
             }
             // カーソル再表示
-            boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+            if (cursor_c >= 0) {
+                boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, 28, cursor_x + 7, 43);
+            }
             sheet_refresh(sheet, cursor_x, 28, cursor_x + 8, 44);
         }
     }
