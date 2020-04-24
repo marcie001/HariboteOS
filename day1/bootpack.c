@@ -121,10 +121,6 @@ void HariMain(void) {
     sheet_updown(sht_cons, 1);
     sheet_updown(sht_win, 2);
     sheet_updown(sht_mouse, 3);
-    mysprintf(s, "%dx%d-%dbit", binfo->scrnx, binfo->scrny, binfo->vmode);
-    putfonts8_asc_sht(sht_back, 0, 132, COL8_FFFFFF, COL8_008484, s, 15);
-    mysprintf(s, "memory %dMB free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
-    putfonts8_asc_sht(sht_back, 0, 32, COL8_FFFFFF, COL8_008484, s, 40);
 
     struct FIFO32 keycmd;
     int keycmd_buf[32];
@@ -147,8 +143,6 @@ void HariMain(void) {
             io_sti();
             if (256 <= i && i <= 511) {
                 // キーボードデータ
-                mysprintf(s, "%x", i - 256);
-                putfonts8_asc_sht(sht_back, 0, 116, COL8_FFFFFF, COL8_008484, s, 4);
                 if (i < 256 + 0x80) {
                     // キーコードを文字コードに変換
                     if (key_shift == 0) {
@@ -268,17 +262,6 @@ void HariMain(void) {
             } else if (512 <= i && i <= 767) {
                 // マウスデータ
                 if (mouse_decode(&mdec, i - 512) != 0) {
-                    mysprintf(s, "[lcr %d %d]", mdec.x, mdec.y);
-                    if ((mdec.btn & 0x01) != 0) {
-                        s[1] = 'L';
-                    }
-                    if ((mdec.btn & 0x02) != 0) {
-                        s[3] = 'R';
-                    }
-                    if ((mdec.btn & 0x04) != 0) {
-                        s[2] = 'C';
-                    }
-                    putfonts8_asc_sht(sht_back, 90, 0, COL8_FFFFFF, COL8_008484, s, 14);
                     mx += mdec.x;
                     my += mdec.y;
                     if (mx < 0) {
@@ -293,8 +276,6 @@ void HariMain(void) {
                     if (my > binfo->scrny - 1) {
                         my = binfo->scrny - 1;
                     }
-                    mysprintf(s, "(%d, %d)", mx, my);
-                    putfonts8_asc_sht(sht_back, 0, 0, COL8_FFFFFF, COL8_008484, s, 10);
                     sheet_slide(sht_mouse, mx, my);
 
                     if ((mdec.btn & 0x01) != 0) {
