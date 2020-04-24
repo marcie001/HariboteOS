@@ -8,9 +8,11 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 
-void console_task(struct SHEET *sheet);
+void console_task(struct SHEET *sheet, unsigned int memtotal);
 
 void make_wtitle8(unsigned char *buf, int xsize, char *title, char act);
+
+int cons_newline(int y, struct SHEET *sheet);
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
@@ -83,7 +85,7 @@ void HariMain(void) {
     make_window8(buf_cons, 256, 165, "console", 0);
     make_textbox8(sht_cons, 8, 28, 240, 128, COL8_000000);
     struct TASK *task_cons = task_alloc();
-    task_cons->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 8;
+    task_cons->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 12;
     task_cons->tss.eip = (int) &console_task;
     task_cons->tss.es = 1 * 8;
     task_cons->tss.cs = 2 * 8;
@@ -92,6 +94,7 @@ void HariMain(void) {
     task_cons->tss.fs = 1 * 8;
     task_cons->tss.gs = 1 * 8;
     *((int *) (task_cons->tss.esp + 4)) = (int) sht_cons;
+    *((int *) (task_cons->tss.esp + 8)) = memtotal;
     task_run(task_cons, 2, 2);
 
     // sht_win
@@ -401,7 +404,7 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c) {
     return;
 }
 
-void console_task(struct SHEET *sheet) {
+void console_task(struct SHEET *sheet, unsigned int memtotal) {
     struct TASK *task = task_now();
     int fifobuf[128], cursor_x = 16, cursor_y = 28, cursor_c = -1;
 
@@ -414,7 +417,8 @@ void console_task(struct SHEET *sheet) {
     // プロンプト表示
     putfonts8_asc_sht(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);
 
-    char s[2];
+    char s[30], cmdline[30];
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     int i, x, y;
     while (1) {
         io_cli();
@@ -458,21 +462,22 @@ void console_task(struct SHEET *sheet) {
                 } else if (i == 10 + 256) {
                     // Enter
                     putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
-                    if (cursor_y < 28 + 112) {
-                        cursor_y += 16;
-                    } else {
-                        // スクロール
-                        for (y = 28; y < 28 + 112; ++y) {
-                            for (x = 8; x < 8 + 240; ++x) {
-                                sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
-                            }
-                        }
-                        for (y = 28 + 112; y < 28 + 128; ++y) {
-                            for (x = 8; x < 8 + 240; ++x) {
-                                sheet->buf[x + y * sheet->bxsize] = COL8_000000;
-                            }
-                        }
-                        sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+                    cmdline[cursor_x / 8 - 2] = 0;
+                    cursor_y = cons_newline(cursor_y, sheet);
+                    if (cmdline[0] == 'm' && cmdline[1] == 'e' && cmdline[2] == 'm' && cmdline[3] == 0) {
+                        // memコマンド
+                        mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
+                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+                        cursor_y = cons_newline(cursor_y, sheet);
+                        mysprintf(s, "free  %dKB", memman_total(memman) / 1024);
+                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+                        cursor_y = cons_newline(cursor_y, sheet);
+                        cursor_y = cons_newline(cursor_y, sheet);
+                    } else if (cmdline[0] != 0) {
+                        // 存在しないコマンドの実行
+                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
+                        cursor_y = cons_newline(cursor_y, sheet);
+                        cursor_y = cons_newline(cursor_y, sheet);
                     }
                     // プロンプト表示
                     putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, ">", 1);
@@ -483,6 +488,7 @@ void console_task(struct SHEET *sheet) {
                         // 1文字表示してから、カーソルを1つ進める
                         s[0] = i - 256;
                         s[1] = 0;
+                        cmdline[cursor_x / 8 - 2] = i - 256;
                         putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
                         cursor_x += 8;
                     }
@@ -497,4 +503,31 @@ void console_task(struct SHEET *sheet) {
     }
     // return は書かない。 return は呼び出し元への JMP 命令のようなものだから。この関数は呼び出し元がないので。
     // ちなみに、return 先の番地は [ESP] にある
+}
+
+/**
+ * コンソールの改行処理を行う
+ * @param cursor_y カーソルのy座標
+ * @param sheet シート
+ * @return カーソルのy座標
+ */
+int cons_newline(int cursor_y, struct SHEET *sheet) {
+    int x, y;
+    if (cursor_y < 28 + 112) {
+        cursor_y += 16;
+    } else {
+        // スクロール
+        for (y = 28; y < 28 + 112; ++y) {
+            for (x = 8; x < 8 + 240; ++x) {
+                sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
+            }
+        }
+        for (y = 28 + 112; y < 28 + 128; ++y) {
+            for (x = 8; x < 8 + 240; ++x) {
+                sheet->buf[x + y * sheet->bxsize] = COL8_000000;
+            }
+        }
+        sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+    }
+    return cursor_y;
 }
