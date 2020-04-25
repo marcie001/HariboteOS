@@ -490,8 +490,8 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                         }
                         sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
                         cursor_y = 28;
-                    } else if (mystrcmp(cmdline, "dir") == 0) {
-                        // dir コマンド
+                    } else if (mystrcmp(cmdline, "ls") == 0) {
+                        // ls コマンド
                         for (x = 0; x < 224; ++x) {
                             if (finfo[x].name[0] == 0x00) {
                                 // ファイル名の1文字目が0の場合、それ以上ファイルはない、という意味
