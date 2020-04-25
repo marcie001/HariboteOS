@@ -1,7 +1,13 @@
 #include "bootpack.h"
-#include <string.h>
 
 #define KEYCMD_LED  0xed
+
+struct FILEINFO {
+    unsigned char name[8], ext[3], type;
+    char reserve[10];
+    unsigned short time, date, clustno;
+    unsigned int size;
+};
 
 void make_window8(unsigned char *buf, int xsize, int ysize, char *title, char act);
 
@@ -420,6 +426,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
 
     char s[30], cmdline[30];
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
     int i, x, y;
     while (1) {
         io_cli();
@@ -483,6 +490,29 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                         }
                         sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
                         cursor_y = 28;
+                    } else if (mystrcmp(cmdline, "dir") == 0) {
+                        // dir コマンド
+                        for (x = 0; x < 224; ++x) {
+                            if (finfo[x].name[0] == 0x00) {
+                                // ファイル名の1文字目が0の場合、それ以上ファイルはない、という意味
+                                break;
+                            }
+                            if (finfo[x].name[0] != 0xe5) {
+                                // ファイル名の1文字目が0xe5の場合、そのファイルは削除済み、という意味
+                                if ((finfo[x].type & 0x18) == 0) {
+                                    mysprintf(s, "filename.ext %d", finfo[x].size);
+                                    for (y = 0; y < 8; ++y) {
+                                        s[y] = finfo[x].name[y];
+                                    }
+                                    s[9] = finfo[x].ext[0];
+                                    s[10] = finfo[x].ext[1];
+                                    s[11] = finfo[x].ext[2];
+                                    putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
+                                    cursor_y = cons_newline(cursor_y, sheet);
+                                }
+                            }
+                        }
+                        cursor_y = cons_newline(cursor_y, sheet);
                     } else if (cmdline[0] != 0) {
                         // 存在しないコマンドの実行
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
