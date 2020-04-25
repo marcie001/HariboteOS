@@ -336,3 +336,5 @@ extern struct TIMER *task_timer;
 /* mysprintf.c */
 void mysprintf(char *str, char *fmt, ...);
 
+/* mystrcmp.c */
+int mystrcmp(unsigned char *s1, unsigned char *s2);

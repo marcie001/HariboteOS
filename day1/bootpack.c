@@ -1,4 +1,5 @@
 #include "bootpack.h"
+#include <string.h>
 
 #define KEYCMD_LED  0xed
 
@@ -464,7 +465,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                     putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
                     cmdline[cursor_x / 8 - 2] = 0;
                     cursor_y = cons_newline(cursor_y, sheet);
-                    if (cmdline[0] == 'm' && cmdline[1] == 'e' && cmdline[2] == 'm' && cmdline[3] == 0) {
+                    if (mystrcmp(cmdline, "mem") == 0) {
                         // memコマンド
                         mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
                         putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
