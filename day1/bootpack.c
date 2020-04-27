@@ -125,7 +125,7 @@ void HariMain(void) {
 
     sheet_slide(sht_back, 0, 0);
     sheet_slide(sht_cons, 32, 4);
-    sheet_slide(sht_win, 8, 56);
+    sheet_slide(sht_win, 300, 56);
     sheet_slide(sht_mouse, mx, my);
     sheet_updown(sht_back, 0);
     sheet_updown(sht_cons, 1);
@@ -424,7 +424,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     // プロンプト表示
     putfonts8_asc_sht(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);
 
-    char s[30], cmdline[30];
+    char s[30], ss[30], cmdline[30], *p;
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
     int i, x, y;
@@ -500,7 +500,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                             if (finfo[x].name[0] != 0xe5) {
                                 // ファイル名の1文字目が0xe5の場合、そのファイルは削除済み、という意味
                                 if ((finfo[x].type & 0x18) == 0) {
-                                    mysprintf(s, "filename.ext %d", finfo[x].size);
+                                    mysprintf(s, "filename.ext %d %d", finfo[x].size, finfo[x].clustno);
                                     for (y = 0; y < 8; ++y) {
                                         s[y] = finfo[x].name[y];
                                     }
@@ -511,6 +511,62 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                                     cursor_y = cons_newline(cursor_y, sheet);
                                 }
                             }
+                        }
+                        cursor_y = cons_newline(cursor_y, sheet);
+                    } else if (myindexof(cmdline, "cat ") == 0) {
+                        // cat コマンド
+
+                        // ファイル名の準備
+                        for (y = 0; y < 11; ++y) {
+                            // ファイル名は、名前8文字 + 拡張子3文字。あまった文字はスペース。ドットはなし。
+                            s[y] = ' ';
+                        }
+                        s[11] = 0;
+                        y = 0;
+                        for (x = 4; y < 11 && cmdline[x] != 0; ++x) {
+                            if (cmdline[x] == '.' && y <= 8) {
+                                y = 8;
+                            } else {
+                                s[y] = cmdline[x];
+                                if ('a' <= s[y] && s[y] <= 'z') {
+                                    // 小文字は大文字に
+                                    s[y] -= 0x20;
+                                }
+                                y++;
+                            }
+                        }
+                        // ファイルを探す
+                        for (x = 0; x < 224; ++x) {
+                            if (finfo[x].name[0] == 0x00) {
+                                break;
+                            }
+                            if ((finfo[x].type & 0x18) == 0) {
+                                if (myhasprefix(finfo[x].name, s)) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (x < 224 && finfo[x].name[0] != 0x00) {
+                            // ファイルが見つかった場合
+                            y = finfo[x].size;
+                            p = (char *) (finfo[x].clustno * 512 + 0x003e00 + ADR_DISKIMG);
+                            cursor_x = 8;
+                            for (x = 0; x < y; ++x) {
+                                // 1文字ずつ出力
+                                s[0] = p[x];
+                                s[1] = 0;
+                                putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+                                cursor_x += 8;
+                                if (cursor_x == 8 + 240) {
+                                    // 右端まで来たので改行
+                                    cursor_x = 8;
+                                    cursor_y = cons_newline(cursor_y, sheet);
+                                }
+                            }
+                        } else {
+                            // ファイルがみつからなかった場合
+                            putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+                            cursor_y = cons_newline(cursor_y, sheet);
                         }
                         cursor_y = cons_newline(cursor_y, sheet);
                     } else if (cmdline[0] != 0) {

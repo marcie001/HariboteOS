@@ -16,3 +16,46 @@ int mystrcmp(unsigned char *s1, unsigned char *s2) {
         s2++;
     }
 }
+
+int myindexof(unsigned char *str, unsigned char *substr) {
+    unsigned char *sub = substr;
+    int pos = 0;
+    for (int i = 0;; ++i) {
+        if (*sub == 0) {
+            return pos;
+        }
+        if (*str == 0) {
+            return -1;
+        }
+        if (*str != *sub) {
+            str++;
+            sub = substr;
+            pos = -1;
+            continue;
+        }
+        if (pos == -1) {
+            pos = i;
+        }
+        str++;
+        sub++;
+    }
+}
+
+int myhasprefix(unsigned char *str, unsigned char *prefix) {
+    while (1) {
+        if (*str == 0 && *prefix == 0) {
+            return 1;
+        }
+        if (*prefix == 0) {
+            return 1;
+        }
+        if (*str == 0) {
+            return 0;
+        }
+        if (*str != *prefix) {
+            return 0;
+        }
+        str++;
+        prefix++;
+    }
+}

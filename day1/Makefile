@@ -28,6 +28,7 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
+	mcopy -i build/hariboteos.img testfile ::
 
 # 一般規則
 
