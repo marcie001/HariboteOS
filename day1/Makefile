@@ -24,7 +24,7 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::

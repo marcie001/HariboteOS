@@ -555,12 +555,44 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                                 // 1文字ずつ出力
                                 s[0] = p[x];
                                 s[1] = 0;
-                                putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
-                                cursor_x += 8;
-                                if (cursor_x == 8 + 240) {
-                                    // 右端まで来たので改行
-                                    cursor_x = 8;
-                                    cursor_y = cons_newline(cursor_y, sheet);
+                                switch (s[0]) {
+                                    case 0x09: // tab
+                                        while (1) {
+                                            putfonts8_asc_sht(
+                                                    sheet,
+                                                    cursor_x,
+                                                    cursor_y,
+                                                    COL8_FFFFFF,
+                                                    COL8_000000,
+                                                    " ",
+                                                    1
+                                            );
+                                            cursor_x += 8;
+                                            if (cursor_x == 8 + 240) {
+                                                // 右端まで来たので改行
+                                                cursor_x = 8;
+                                                cursor_y = cons_newline(cursor_y, sheet);
+                                            }
+                                            if (((cursor_x - 8) & 0x1f) == 0) {
+                                                break;
+                                            }
+                                        }
+                                        break;
+                                    case 0x0a: // 改行
+                                        cursor_x = 8;
+                                        cursor_y = cons_newline(cursor_y, sheet);
+                                        break;
+                                    case 0x0d: // 復帰
+                                        // なにもしない
+                                        break;
+                                    default: // 普通の文字
+                                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
+                                        cursor_x += 8;
+                                        if (cursor_x == 8 + 240) {
+                                            // 右端まで来たので改行
+                                            cursor_x = 8;
+                                            cursor_y = cons_newline(cursor_y, sheet);
+                                        }
                                 }
                             }
                         } else {
