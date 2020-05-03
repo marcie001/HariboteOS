@@ -15,6 +15,9 @@ build/nasmfunc.o: nasmfunc.asm Makefile
 build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls $(OBJS_BOOTPACK)
 
+build/hlt.hrb: hlt.asm Makefile
+	nasm -l build/hlt.lst -o build/hlt.hrb hlt.asm
+
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
 
@@ -24,11 +27,12 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hlt.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
 	mcopy -i build/hariboteos.img testfile ::
+	mcopy -i build/hariboteos.img build/hlt.hrb ::
 
 # 一般規則
 
@@ -52,7 +56,7 @@ run-vb :
 
 debug :
 	make img
-	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S &
+	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S -monitor stdio
 
 clean :
 	-rm build/*.bin build/*.lst build/*.sys
