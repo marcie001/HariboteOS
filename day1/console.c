@@ -3,9 +3,36 @@
 //
 #include "bootpack.h"
 
+struct CONSOLE {
+    struct SHEET *sht;
+    int cur_x, cur_y, cur_c;
+};
+
+void cons_newline(struct CONSOLE *cons);
+
+void cons_putchar(struct CONSOLE *cons, int chr, char move);
+
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal);
+
+void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
+
+void cmd_clear(struct CONSOLE *cons);
+
+void cmd_ls(struct CONSOLE *cons);
+
+void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline);
+
+void cmd_hlt(struct CONSOLE *cons, int *fat);
+
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
     struct TASK *task = task_now();
-    int fifobuf[128], cursor_x = 16, cursor_y = 28, cursor_c = -1;
+    int fifobuf[128];
+
+    struct CONSOLE cons;
+    cons.sht = sheet;
+    cons.cur_x = 8;
+    cons.cur_y = 28;
+    cons.cur_c = -1;
 
     fifo32_init(&task->fifo, 128, fifobuf, task);
 
@@ -14,13 +41,11 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     timer_settime(timer, 50);
 
     // プロンプト表示
-    putfonts8_asc_sht(sheet, 8, 28, COL8_FFFFFF, COL8_000000, ">", 1);
+    cons_putchar(&cons, '>', 1);
 
-    char s[30], ss[30], cmdline[30], *p;
+    char cmdline[30];
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    int i, x, y;
+    int i;
     int *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
     file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));
     while (1) {
@@ -35,256 +60,257 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
                 // カーソル用タイマ
                 if (i != 0) {
                     timer_init(timer, &task->fifo, 0);
-                    if (cursor_c >= 0) {
-                        cursor_c = COL8_FFFFFF;
+                    if (cons.cur_c >= 0) {
+                        cons.cur_c = COL8_FFFFFF;
                     }
                 } else {
                     timer_init(timer, &task->fifo, 1);
-                    if (cursor_c >= 0) {
-                        cursor_c = COL8_000000;
+                    if (cons.cur_c >= 0) {
+                        cons.cur_c = COL8_000000;
                     }
                 }
                 timer_settime(timer, 50);
             }
             if (i == 2) {
-                cursor_c = COL8_FFFFFF;
+                cons.cur_c = COL8_FFFFFF;
             }
             if (i == 3) {
-                boxfill8(sheet->buf, sheet->bxsize, COL8_000000, cursor_x, 28, cursor_x + 7, 43);
-                cursor_c = -1;
+                boxfill8(sheet->buf, sheet->bxsize, COL8_000000, cons.cur_x, 28, cons.cur_x + 7, 43);
+                cons.cur_c = -1;
             }
             if (256 <= i && i <= 511) {
                 // キーボードデータ
                 if (i == 8 + 256) {
                     // バックスペース
-                    if (cursor_x > 16) {
+                    if (cons.cur_x > 16) {
                         // カーソルをスペースで消してから、カーソルを1つ戻す
-                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
-                        cursor_x -= 8;
+                        cons_putchar(&cons, ' ', 0);
+                        cons.cur_x -= 8;
                     }
                 } else if (i == 10 + 256) {
                     // Enter
-                    putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, " ", 1);
-                    cmdline[cursor_x / 8 - 2] = 0;
-                    cursor_y = cons_newline(cursor_y, sheet);
-                    if (mystrcmp(cmdline, "mem") == 0) {
-                        // mem コマンド
-                        mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
-                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
-                        cursor_y = cons_newline(cursor_y, sheet);
-                        mysprintf(s, "free  %dKB", memman_total(memman) / 1024);
-                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
-                        cursor_y = cons_newline(cursor_y, sheet);
-                        cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (mystrcmp(cmdline, "cls") == 0) {
-                        // cls コマンド
-                        for (y = 28; y < 28 + 128; ++y) {
-                            for (x = 8; x < 8 + 240; ++x) {
-                                sheet->buf[x + y * sheet->bxsize] = COL8_000000;
-                            }
-                        }
-                        sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
-                        cursor_y = 28;
-                    } else if (mystrcmp(cmdline, "ls") == 0) {
-                        // ls コマンド
-                        for (x = 0; x < 224; ++x) {
-                            if (finfo[x].name[0] == 0x00) {
-                                // ファイル名の1文字目が0の場合、それ以上ファイルはない、という意味
-                                break;
-                            }
-                            if (finfo[x].name[0] != 0xe5) {
-                                // ファイル名の1文字目が0xe5の場合、そのファイルは削除済み、という意味
-                                if ((finfo[x].type & 0x18) == 0) {
-                                    mysprintf(s, "filename.ext %d %d", finfo[x].size, finfo[x].clustno);
-                                    for (y = 0; y < 8; ++y) {
-                                        s[y] = finfo[x].name[y];
-                                    }
-                                    s[9] = finfo[x].ext[0];
-                                    s[10] = finfo[x].ext[1];
-                                    s[11] = finfo[x].ext[2];
-                                    putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, s, 30);
-                                    cursor_y = cons_newline(cursor_y, sheet);
-                                }
-                            }
-                        }
-                        cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (myindexof(cmdline, "cat ") == 0) {
-                        // cat コマンド
-
-                        // ファイル名の準備
-                        for (y = 0; y < 11; ++y) {
-                            // ファイル名は、名前8文字 + 拡張子3文字。あまった文字はスペース。ドットはなし。
-                            s[y] = ' ';
-                        }
-                        s[11] = 0;
-                        y = 0;
-                        for (x = 4; y < 11 && cmdline[x] != 0; ++x) {
-                            if (cmdline[x] == '.' && y <= 8) {
-                                y = 8;
-                            } else {
-                                s[y] = cmdline[x];
-                                if ('a' <= s[y] && s[y] <= 'z') {
-                                    // 小文字は大文字に
-                                    s[y] -= 0x20;
-                                }
-                                y++;
-                            }
-                        }
-                        // ファイルを探す
-                        for (x = 0; x < 224; ++x) {
-                            if (finfo[x].name[0] == 0x00) {
-                                break;
-                            }
-                            if ((finfo[x].type & 0x18) == 0) {
-                                if (myhasprefix(finfo[x].name, s)) {
-                                    break;
-                                }
-                            }
-                        }
-                        if (x < 224 && finfo[x].name[0] != 0x00) {
-                            // ファイルが見つかった場合
-                            p = (char *) memman_alloc_4k(memman, finfo[x].size);
-                            file_loadfile(finfo[x].clustno, finfo[x].size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-                            cursor_x = 8;
-                            for (y = 0; y < finfo[x].size; ++y) {
-                                // 1文字ずつ出力
-                                s[0] = p[y];
-                                s[1] = 0;
-                                switch (s[0]) {
-                                    case 0x09: // tab
-                                        while (1) {
-                                            putfonts8_asc_sht(
-                                                    sheet,
-                                                    cursor_x,
-                                                    cursor_y,
-                                                    COL8_FFFFFF,
-                                                    COL8_000000,
-                                                    " ",
-                                                    1
-                                            );
-                                            cursor_x += 8;
-                                            if (cursor_x == 8 + 240) {
-                                                // 右端まで来たので改行
-                                                cursor_x = 8;
-                                                cursor_y = cons_newline(cursor_y, sheet);
-                                            }
-                                            if (((cursor_x - 8) & 0x1f) == 0) {
-                                                break;
-                                            }
-                                        }
-                                        break;
-                                    case 0x0a: // 改行
-                                        cursor_x = 8;
-                                        cursor_y = cons_newline(cursor_y, sheet);
-                                        break;
-                                    case 0x0d: // 復帰
-                                        // なにもしない
-                                        break;
-                                    default: // 普通の文字
-                                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
-                                        cursor_x += 8;
-                                        if (cursor_x == 8 + 240) {
-                                            // 右端まで来たので改行
-                                            cursor_x = 8;
-                                            cursor_y = cons_newline(cursor_y, sheet);
-                                        }
-                                }
-                            }
-                            memman_free_4k(memman, (int) p, finfo[x].size);
-                        } else {
-                            // ファイルがみつからなかった場合
-                            putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
-                            cursor_y = cons_newline(cursor_y, sheet);
-                        }
-                        cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (mystrcmp(cmdline, "hlt") == 0) {
-                        for (y = 0; y < 11; ++y) {
-                            s[y] = ' ';
-                        }
-                        s[0] = 'H';
-                        s[1] = 'L';
-                        s[2] = 'T';
-                        s[8] = 'H';
-                        s[9] = 'R';
-                        s[10] = 'B';
-                        s[11] = 0;
-                        for (x = 0; x < 224; ++x) {
-                            if (finfo[x].name[0] == 0x00) {
-                                break;
-                            }
-                            if ((finfo[x].type & 0x18) == 0) {
-                                if (myhasprefix(finfo[x].name, s)) {
-                                    break;
-                                }
-                            }
-                        }
-                        if (x < 224 && finfo[x].name[0] != 0x00) {
-                            p = (char *) memman_alloc_4k(memman, finfo[x].size);
-                            file_loadfile(finfo[x].clustno, finfo[x].size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-                            // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
-                            set_segmdesc(gdt + 1003, finfo[x].size - 1, (int) p, AR_CODE32_ER);
-                            farjmp(0, 1003 * 8);
-                            memman_free_4k(memman, (int) p, finfo[x].size);
-                        } else {
-                            putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
-                            cursor_y = cons_newline(cursor_y, sheet);
-                        }
-                        cursor_y = cons_newline(cursor_y, sheet);
-                    } else if (cmdline[0] != 0) {
-                        // 存在しないコマンドの実行
-                        putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
-                        cursor_y = cons_newline(cursor_y, sheet);
-                        cursor_y = cons_newline(cursor_y, sheet);
-                    }
+                    cons_putchar(&cons, ' ', 0);
+                    cmdline[cons.cur_x / 8 - 2] = 0;
+                    cons_newline(&cons);
+                    cons_runcmd(cmdline, &cons, fat, memtotal);
                     // プロンプト表示
-                    putfonts8_asc_sht(sheet, 8, cursor_y, COL8_FFFFFF, COL8_000000, ">", 1);
-                    cursor_x = 16;
+                    cons_putchar(&cons, '>', 1);
                 } else {
                     // 一般文字
-                    if (cursor_x < 240) {
-                        // 1文字表示してから、カーソルを1つ進める
-                        s[0] = i - 256;
-                        s[1] = 0;
-                        cmdline[cursor_x / 8 - 2] = i - 256;
-                        putfonts8_asc_sht(sheet, cursor_x, cursor_y, COL8_FFFFFF, COL8_000000, s, 1);
-                        cursor_x += 8;
+                    if (cons.cur_x < 240) {
+                        cmdline[cons.cur_x / 8 - 2] = i - 256;
+                        cons_putchar(&cons, i - 256, 1);
                     }
                 }
             }
             // カーソル再表示
-            if (cursor_c >= 0) {
-                boxfill8(sheet->buf, sheet->bxsize, cursor_c, cursor_x, cursor_y, cursor_x + 7, cursor_y + 15);
+            if (cons.cur_c >= 0) {
+                boxfill8(sheet->buf, sheet->bxsize, cons.cur_c, cons.cur_x, cons.cur_y, cons.cur_x + 7,
+                         cons.cur_y + 15);
             }
-            sheet_refresh(sheet, cursor_x, cursor_y, cursor_x + 8, cursor_y + 16);
+            sheet_refresh(sheet, cons.cur_x, cons.cur_y, cons.cur_x + 8, cons.cur_y + 16);
         }
     }
     // return は書かない。 return は呼び出し元への JMP 命令のようなものだから。この関数は呼び出し元がないので。
     // ちなみに、return 先の番地は [ESP] にある
 }
 
-/**
- * コンソールの改行処理を行う
- * @param cursor_y カーソルのy座標
- * @param sheet シート
- * @return カーソルのy座標
- */
-int cons_newline(int cursor_y, struct SHEET *sheet) {
+void cons_newline(struct CONSOLE *cons) {
     int x, y;
-    if (cursor_y < 28 + 112) {
-        cursor_y += 16;
+    if (cons->cur_y < 28 + 112) {
+        cons->cur_y += 16;
     } else {
         // スクロール
         for (y = 28; y < 28 + 112; ++y) {
             for (x = 8; x < 8 + 240; ++x) {
-                sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
+                cons->sht->buf[x + y * cons->sht->bxsize] = cons->sht->buf[x + (y + 16) * cons->sht->bxsize];
             }
         }
         for (y = 28 + 112; y < 28 + 128; ++y) {
             for (x = 8; x < 8 + 240; ++x) {
-                sheet->buf[x + y * sheet->bxsize] = COL8_000000;
+                cons->sht->buf[x + y * cons->sht->bxsize] = COL8_000000;
             }
         }
-        sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+        sheet_refresh(cons->sht, 8, 28, 8 + 240, 28 + 128);
     }
-    return cursor_y;
+    cons->cur_x = 8;
+    return;
+}
+
+void cons_putchar(struct CONSOLE *cons, int chr, char move) {
+    char s[2];
+    s[0] = chr;
+    s[1] = 0;
+    switch (s[0]) {
+        case 0x09: // tab
+            while (1) {
+                putfonts8_asc_sht(
+                        cons->sht,
+                        cons->cur_x,
+                        cons->cur_y,
+                        COL8_FFFFFF,
+                        COL8_000000,
+                        " ",
+                        1
+                );
+                cons->cur_x += 8;
+                if (cons->cur_x == 8 + 240) {
+                    // 右端まで来たので改行
+                    cons_newline(cons);
+                }
+                if (((cons->cur_x - 8) & 0x1f) == 0) {
+                    break;
+                }
+            }
+            break;
+        case 0x0a: // 改行
+            cons_newline(cons);
+            break;
+        case 0x0d: // 復帰
+            // なにもしない
+            break;
+        default: // 普通の文字
+            putfonts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 1);
+            if (move != 0) {
+                // move が 0 以外のときのみカーソルを進める
+                cons->cur_x += 8;
+                if (cons->cur_x == 8 + 240) {
+                    // 右端まで来たので改行
+                    cons_newline(cons);
+                }
+            }
+    }
+    return;
+}
+
+void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal) {
+    if (mystrcmp(cmdline, "mem") == 0) {
+        cmd_mem(cons, memtotal);
+    } else if (mystrcmp(cmdline, "clear") == 0) {
+        cmd_clear(cons);
+    } else if (mystrcmp(cmdline, "ls") == 0) {
+        cmd_ls(cons);
+    } else if (myindexof(cmdline, "cat ") == 0) {
+        cmd_cat(cons, fat, cmdline);
+    } else if (mystrcmp(cmdline, "hlt") == 0) {
+        cmd_hlt(cons, fat);
+    } else if (cmdline[0] != 0) {
+        // 存在しないコマンドの実行
+        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
+        cons_newline(cons);
+        cons_newline(cons);
+    }
+    return;
+}
+
+/**
+ * mem コマンド
+ * @param cons
+ * @param memtotal
+ */
+void cmd_mem(struct CONSOLE *cons, unsigned int memtotal) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    char s[30];
+    mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
+    putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
+    cons_newline(cons);
+    mysprintf(s, "free  %dKB", memman_total(memman) / 1024);
+    putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
+    cons_newline(cons);
+    cons_newline(cons);
+    return;
+}
+
+/**
+ * clear コマンド
+ * @param cons
+ */
+void cmd_clear(struct CONSOLE *cons) {
+    int x, y;
+    for (y = 28; y < 28 + 128; ++y) {
+        for (x = 8; x < 8 + 240; ++x) {
+            cons->sht->buf[x + y * cons->sht->bxsize] = COL8_000000;
+        }
+    }
+    sheet_refresh(cons->sht, 8, 28, 8 + 240, 28 + 128);
+    cons->cur_y = 28;
+    return;
+}
+
+/**
+ * ls コマンド
+ * @param cons
+ */
+void cmd_ls(struct CONSOLE *cons) {
+    struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+    int x, y;
+    char s[30];
+    for (x = 0; x < 224; ++x) {
+        if (finfo[x].name[0] == 0x00) {
+            // ファイル名の1文字目が0の場合、それ以上ファイルはない、という意味
+            break;
+        }
+        if (finfo[x].name[0] != 0xe5) {
+            // ファイル名の1文字目が0xe5の場合、そのファイルは削除済み、という意味
+            if ((finfo[x].type & 0x18) == 0) {
+                mysprintf(s, "filename.ext %d %d", finfo[x].size, finfo[x].clustno);
+                for (y = 0; y < 8; ++y) {
+                    s[y] = finfo[x].name[y];
+                }
+                s[9] = finfo[x].ext[0];
+                s[10] = finfo[x].ext[1];
+                s[11] = finfo[x].ext[2];
+                putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
+                cons_newline(cons);
+            }
+        }
+    }
+    cons_newline(cons);
+    return;
+}
+
+void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct FILEINFO *finfo = file_search(cmdline + 4, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+    char *p;
+    int i;
+    if (finfo != 0) {
+        p = (char *) memman_alloc_4k(memman, finfo->size);
+        file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
+        for (i = 0; i < finfo->size; ++i) {
+            cons_putchar(cons, p[i], 1);
+        }
+        memman_free_4k(memman, (int) p, finfo->size);
+    } else {
+        // ファイルがみつからなかった場合
+        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+        cons_newline(cons);
+    }
+    cons_newline(cons);
+    return;
+}
+
+/**
+ * hlt コマンド
+ * @param cons
+ * @param fat
+ */
+void cmd_hlt(struct CONSOLE *cons, int *fat) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct FILEINFO *finfo = file_search("HLT.HRB", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
+    char *p;
+    if (finfo != 0) {
+        p = (char *) memman_alloc_4k(memman, finfo->size);
+        file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
+        // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
+        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
+        farjmp(0, 1003 * 8);
+        memman_free_4k(memman, (int) p, finfo->size);
+    } else {
+        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
+        cons_newline(cons);
+    }
+    cons_newline(cons);
+    return;
 }
