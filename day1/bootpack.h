@@ -50,6 +50,8 @@ void farjmp(int eip, int cs);
 
 void farcall(int eip, int cs);
 
+void start_app(int eip, int cs, int esp, int ds);
+
 void asm_hrb_api(void);
 
 /* graphic.c */

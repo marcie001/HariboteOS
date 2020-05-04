@@ -223,7 +223,7 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char name[18], *p;
+    char name[18], *p, *q;
     int i;
 
     for (i = 0; i < 13; ++i) {
@@ -245,12 +245,25 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
     }
     if (finfo != 0) {
         p = (char *) memman_alloc_4k(memman, finfo->size);
+        q = (char *) memman_alloc_4k(memman, 64 * 1024);
         *((int *) 0xfe8) = (int) p;
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
         // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
+        // 1003 はアプリ用のコードセグメント
         set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
-        farcall(0, 1003 * 8);
+        // 1004 はアプリ用のデータセグメント
+        set_segmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW);
+        if (finfo->size >= 8 && myhasprefix(p + 4, "Hari")) {
+            p[0] = 0xe8;
+            p[1] = 0x16;
+            p[2] = 0x00;
+            p[3] = 0x00;
+            p[4] = 0x00;
+            p[5] = 0xcb;
+        }
+        start_app(0, 1003 * 8, 64 * 1024, 1004 * 8);
         memman_free_4k(memman, (int) p, finfo->size);
+        memman_free_4k(memman, (int) q, 64 * 1024);
         cons_newline(cons);
         return 1;
     }
