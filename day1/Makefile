@@ -9,9 +9,6 @@ default :
 build/asmhead.bin : asmhead.asm Makefile
 	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.asm
 
-build/nasmfunc.o: nasmfunc.asm Makefile
-	nasm -f elf32 -o build/nasmfunc.o nasmfunc.asm
-
 build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls -Map=build/bootpack.map $(OBJS_BOOTPACK)
 
@@ -20,6 +17,12 @@ build/hello.hrb: hello.asm Makefile
 
 build/hello2.hrb: hello2.asm Makefile
 	nasm -l build/hello2.lst -o build/hello2.hrb hello2.asm
+
+build/a.hrb: build/a.o build/a_nasm.o Makefile
+	ld -m elf_i386 -e HariMain -o build/a.hrb -Tos.ls -Map=build/a.map build/a.o build/a_nasm.o
+
+build/hello3.hrb: build/hello3.o build/a_nasm.o Makefile
+	ld -m elf_i386 -e HariMain -o build/hello3.hrb -Tos.ls -Map=build/hello3.map build/hello3.o build/a_nasm.o
 
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
@@ -30,18 +33,23 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
 	mcopy -i build/hariboteos.img testfile ::
 	mcopy -i build/hariboteos.img build/hello.hrb ::
 	mcopy -i build/hariboteos.img build/hello2.hrb ::
+	mcopy -i build/hariboteos.img build/a.hrb ::
+	mcopy -i build/hariboteos.img build/hello3.hrb ::
 
 # 一般規則
 
 build/%.o: %.c Makefile
 	gcc -Os -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
+
+build/%.o: %.asm Makefile
+	nasm -f elf32 -o build/$*.o $*.asm
 
 # コマンド
 asm :
