@@ -50,6 +50,8 @@ void farjmp(int eip, int cs);
 
 void farcall(int eip, int cs);
 
+void asm_cons_putchar(void);
+
 /* graphic.c */
 void init_palette(void);
 
