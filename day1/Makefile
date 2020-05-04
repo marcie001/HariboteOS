@@ -13,7 +13,7 @@ build/nasmfunc.o: nasmfunc.asm Makefile
 	nasm -f elf32 -o build/nasmfunc.o nasmfunc.asm
 
 build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
-	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls $(OBJS_BOOTPACK)
+	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls -Map=build/bootpack.map $(OBJS_BOOTPACK)
 
 build/hlt.hrb: hlt.asm Makefile
 	nasm -l build/hlt.lst -o build/hlt.hrb hlt.asm

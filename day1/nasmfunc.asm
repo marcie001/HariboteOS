@@ -12,7 +12,9 @@ GLOBAL  load_cr0, store_cr0
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler2c
 GLOBAL  memtest_sub
 GLOBAL  load_tr, farjmp
+GLOBAL  asm_cons_putchar
 EXTERN  inthandler20, inthandler21, inthandler2c
+EXTERN  cons_putchar
 
 SECTION .text
 
@@ -196,3 +198,12 @@ farjmp: ; void farjmp(int eip, int cs);
 ; taskswitch4:    ; void taskswitch4(void);
 ;     JMP 4*8:0
 ;     RET
+
+asm_cons_putchar:
+    PUSH    1
+    AND EAX,0xff ; AH や EAX の上位を 0 にして、 EAX に文字コードが入った状態にする
+    PUSH    EAX
+    PUSH    DWORD [0x0fec] ; メモリの内容を読み込んでその値をpush
+    CALL    cons_putchar
+    ADD ESP,12 ; スタックに積んだデータを捨てる
+    RET
