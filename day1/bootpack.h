@@ -36,6 +36,8 @@ int load_cr0(void);
 
 void store_cr0(int cr0);
 
+void asm_inthandler0d(void);
+
 void asm_inthandler20(void);
 
 void asm_inthandler21(void);
@@ -353,6 +355,8 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 void console_task(struct SHEET *sheet, unsigned int memtotal);
 
 void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+
+int inthandler0d(int *esp);
 
 /* file.c */
 struct FILEINFO {

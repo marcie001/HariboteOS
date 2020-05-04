@@ -9,11 +9,11 @@ GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  load_cr0, store_cr0
-GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler2c
+GLOBAL  asm_inthandler0d, asm_inthandler20, asm_inthandler21, asm_inthandler2c
 GLOBAL  memtest_sub
 GLOBAL  load_tr, farjmp, farcall
 GLOBAL  start_app, asm_hrb_api
-EXTERN  inthandler20, inthandler21, inthandler2c
+EXTERN  inthandler0d, inthandler20, inthandler21, inthandler2c
 EXTERN  hrb_api
 
 SECTION .text
@@ -100,6 +100,67 @@ load_cr0: ; int load_cr0(void);
 store_cr0: ; void store_cr0(int cr0);
     MOV EAX,[ESP+4]
     MOV CR0,EAX
+    RET
+
+asm_inthandler0d:
+    STI
+    PUSH    ES
+    PUSH    DS
+    PUSHAD
+    MOV AX,SS
+    CMP AX,1*8
+    JNE .from_app
+    ; OSが動いているときに割り込まれた場合
+    MOV EAX,ESP
+    PUSH    SS
+    PUSH    EAX
+    MOV AX,SS
+    MOV DS,AX
+    MOV ES,AX
+    CALL    inthandler0d
+    ADD ESP,8
+    POPAD
+    POP DS
+    POP ES
+    ADD ESP,4   ; INT 0x0d ではこの行が必要
+    IRETD
+.from_app:
+    ; アプリが動いているときに割り込まれた場合
+    CLI
+    MOV EAX,1*8
+    MOV DS,AX       ; とりあえず DS だけ OS 用にする
+    MOV ECX,[0xfe4] ; OS の ESP
+    ADD ECX,-8
+    MOV [ECX+4],SS  ; 割り込まれたときの SS を保存
+    MOV [ECX],ESP   ; 割り込まれたときの ESP を保存
+    MOV SS,AX
+    MOV ES,AX
+    MOV ESP,ECX
+    STI
+    CALL    inthandler0d
+    CLI
+    CMP EAX,0
+    JNE .kill
+    POP ECX
+    POP EAX
+    MOV SS,AX   ; SS をアプリ用に戻す
+    MOV ESP,ECX ; ESP もアプリ用に戻す
+    POPAD
+    POP DS
+    POP ES
+    ADD ESP,4   ; INT 0x0d ではこの行が必要
+    IRETD
+.kill:
+    ; アプリを異常終了させる
+    MOV EAX,1*8 ; OS 用の DS/SS
+    MOV ES,AX
+    MOV SS,AX
+    MOV DS,AX
+    MOV FS,AX
+    MOV GS,AX
+    MOV ESP,[0xfe4] ; start_app のときの ESP に無理やり戻す
+    STI ; 切り替え完了
+    POPAD ; 保存しておいたレジスタを回復
     RET
 
 asm_inthandler20:
