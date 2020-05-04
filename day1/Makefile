@@ -15,8 +15,8 @@ build/nasmfunc.o: nasmfunc.asm Makefile
 build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls -Map=build/bootpack.map $(OBJS_BOOTPACK)
 
-build/hlt.hrb: hlt.asm Makefile
-	nasm -l build/hlt.lst -o build/hlt.hrb hlt.asm
+build/hello.hrb: hello.asm Makefile
+	nasm -l build/hello.lst -o build/hello.hrb hello.asm
 
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
@@ -27,12 +27,12 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hlt.hrb
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
 	mcopy -i build/hariboteos.img testfile ::
-	mcopy -i build/hariboteos.img build/hlt.hrb ::
+	mcopy -i build/hariboteos.img build/hello.hrb ::
 
 # 一般規則
 

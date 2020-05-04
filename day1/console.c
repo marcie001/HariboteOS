@@ -22,7 +22,7 @@ void cmd_ls(struct CONSOLE *cons);
 
 void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline);
 
-void cmd_hlt(struct CONSOLE *cons, int *fat);
+int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
 
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
     struct TASK *task = task_now();
@@ -193,15 +193,51 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
         cmd_ls(cons);
     } else if (myindexof(cmdline, "cat ") == 0) {
         cmd_cat(cons, fat, cmdline);
-    } else if (mystrcmp(cmdline, "hlt") == 0) {
-        cmd_hlt(cons, fat);
     } else if (cmdline[0] != 0) {
-        // 存在しないコマンドの実行
-        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
-        cons_newline(cons);
-        cons_newline(cons);
+        if (cmd_app(cons, fat, cmdline) == 0) {
+            // 存在しないコマンドの実行
+            putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
+            cons_newline(cons);
+            cons_newline(cons);
+        }
     }
     return;
+}
+
+int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
+    char name[18], *p;
+    int i;
+
+    for (i = 0; i < 13; ++i) {
+        if (cmdline[i] <= ' ') {
+            break;
+        }
+        name[i] = cmdline[i];
+    }
+    name[i] = 0;
+    struct FILEINFO *finfo = file_search(name, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+    if (finfo == 0 && name[i - 1] != '.') {
+        // 後ろに ".HRB" をつけて再検索
+        name[i] = '.';
+        name[i + 1] = 'H';
+        name[i + 2] = 'R';
+        name[i + 3] = 'B';
+        name[i + 4] = 0;
+        finfo = file_search(name, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+    }
+    if (finfo != 0) {
+        p = (char *) memman_alloc_4k(memman, finfo->size);
+        file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
+        // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
+        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
+        farcall(0, 1003 * 8);
+        memman_free_4k(memman, (int) p, finfo->size);
+        cons_newline(cons);
+        return 1;
+    }
+    return 0;
 }
 
 /**
@@ -284,31 +320,6 @@ void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
         memman_free_4k(memman, (int) p, finfo->size);
     } else {
         // ファイルがみつからなかった場合
-        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
-        cons_newline(cons);
-    }
-    cons_newline(cons);
-    return;
-}
-
-/**
- * hlt コマンド
- * @param cons
- * @param fat
- */
-void cmd_hlt(struct CONSOLE *cons, int *fat) {
-    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    struct FILEINFO *finfo = file_search("HLT.HRB", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char *p;
-    if (finfo != 0) {
-        p = (char *) memman_alloc_4k(memman, finfo->size);
-        file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
-        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER);
-        farcall(0, 1003 * 8);
-        memman_free_4k(memman, (int) p, finfo->size);
-    } else {
         putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
         cons_newline(cons);
     }
