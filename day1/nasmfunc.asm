@@ -206,4 +206,4 @@ asm_cons_putchar:
     PUSH    DWORD [0x0fec] ; メモリの内容を読み込んでその値をpush
     CALL    cons_putchar
     ADD ESP,12 ; スタックに積んだデータを捨てる
-    RET
+    RETF
