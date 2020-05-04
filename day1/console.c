@@ -12,6 +12,10 @@ void cons_newline(struct CONSOLE *cons);
 
 void cons_putchar(struct CONSOLE *cons, int chr, char move);
 
+void cons_putstr0(struct CONSOLE *cons, char *s);
+
+void cons_putstr1(struct CONSOLE *cons, char *s, int l);
+
 void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal);
 
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal);
@@ -184,6 +188,20 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move) {
     return;
 }
 
+void cons_putstr0(struct CONSOLE *cons, char *s) {
+    for (; *s != 0; s++) {
+        cons_putchar(cons, *s, 1);
+    }
+    return;
+}
+
+void cons_putstr1(struct CONSOLE *cons, char *s, int l) {
+    for (int i = 0; i < l; i++) {
+        cons_putchar(cons, s[i], 1);
+    }
+    return;
+}
+
 void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal) {
     if (mystrcmp(cmdline, "mem") == 0) {
         cmd_mem(cons, memtotal);
@@ -196,9 +214,7 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
     } else if (cmdline[0] != 0) {
         if (cmd_app(cons, fat, cmdline) == 0) {
             // 存在しないコマンドの実行
-            putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "Bad command", 12);
-            cons_newline(cons);
-            cons_newline(cons);
+            cons_putstr0(cons, "Bad command\n\n");
         }
     }
     return;
@@ -247,14 +263,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
  */
 void cmd_mem(struct CONSOLE *cons, unsigned int memtotal) {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    char s[30];
-    mysprintf(s, "total %dMB", memtotal / (1024 * 1024));
-    putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
-    cons_newline(cons);
-    mysprintf(s, "free  %dKB", memman_total(memman) / 1024);
-    putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
-    cons_newline(cons);
-    cons_newline(cons);
+    char s[60];
+    mysprintf(s, "total %dMB\nfree  %dKB\n\n", memtotal / (1024 * 1024), memman_total(memman) / 1024);
+    cons_putstr0(cons, s);
     return;
 }
 
@@ -290,15 +301,14 @@ void cmd_ls(struct CONSOLE *cons) {
         if (finfo[x].name[0] != 0xe5) {
             // ファイル名の1文字目が0xe5の場合、そのファイルは削除済み、という意味
             if ((finfo[x].type & 0x18) == 0) {
-                mysprintf(s, "filename.ext %d %d", finfo[x].size, finfo[x].clustno);
+                mysprintf(s, "filename.ext %d %d\n", finfo[x].size, finfo[x].clustno);
                 for (y = 0; y < 8; ++y) {
                     s[y] = finfo[x].name[y];
                 }
                 s[9] = finfo[x].ext[0];
                 s[10] = finfo[x].ext[1];
                 s[11] = finfo[x].ext[2];
-                putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, s, 30);
-                cons_newline(cons);
+                cons_putstr0(cons, s);
             }
         }
     }
@@ -310,19 +320,42 @@ void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct FILEINFO *finfo = file_search(cmdline + 4, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
     char *p;
-    int i;
     if (finfo != 0) {
         p = (char *) memman_alloc_4k(memman, finfo->size);
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        for (i = 0; i < finfo->size; ++i) {
-            cons_putchar(cons, p[i], 1);
-        }
+        cons_putstr1(cons, p, finfo->size);
         memman_free_4k(memman, (int) p, finfo->size);
     } else {
         // ファイルがみつからなかった場合
-        putfonts8_asc_sht(cons->sht, 8, cons->cur_y, COL8_FFFFFF, COL8_000000, "File not found.", 15);
-        cons_newline(cons);
+        cons_putstr0(cons, "File not found.\n");
     }
     cons_newline(cons);
+    return;
+}
+
+/**
+ *
+ * @param edi
+ * @param esi
+ * @param ebp
+ * @param esp
+ * @param ebx 機能番号1, 2のとき、文字列の番地
+ * @param edx 機能番号
+ * @param ecx 機能番号2のとき、文字数
+ * @param eax 機能番号0のとき、文字
+ */
+void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
+    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    switch (edx) {
+        case 1:
+            cons_putchar(cons, eax & 0xff, 1);
+            break;
+        case 2:
+            cons_putstr0(cons, (char *) ebx);
+            break;
+        case 3:
+            cons_putstr1(cons, (char *) ebx, ecx);
+            break;
+    }
     return;
 }

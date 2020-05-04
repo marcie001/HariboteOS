@@ -18,6 +18,9 @@ build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
 build/hello.hrb: hello.asm Makefile
 	nasm -l build/hello.lst -o build/hello.hrb hello.asm
 
+build/hello2.hrb: hello2.asm Makefile
+	nasm -l build/hello2.lst -o build/hello2.hrb hello2.asm
+
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
 
@@ -27,12 +30,13 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
 	mcopy -i build/hariboteos.img testfile ::
 	mcopy -i build/hariboteos.img build/hello.hrb ::
+	mcopy -i build/hariboteos.img build/hello2.hrb ::
 
 # 一般規則
 

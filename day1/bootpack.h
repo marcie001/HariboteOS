@@ -50,7 +50,7 @@ void farjmp(int eip, int cs);
 
 void farcall(int eip, int cs);
 
-void asm_cons_putchar(void);
+void asm_hrb_api(void);
 
 /* graphic.c */
 void init_palette(void);
@@ -349,6 +349,8 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 
 /* console.c */
 void console_task(struct SHEET *sheet, unsigned int memtotal);
+
+void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
 /* file.c */
 struct FILEINFO {
