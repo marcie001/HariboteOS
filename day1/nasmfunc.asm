@@ -11,7 +11,7 @@ GLOBAL  load_gdtr, load_idtr
 GLOBAL  load_cr0, store_cr0
 GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler2c
 GLOBAL  memtest_sub
-GLOBAL  load_tr, farjmp
+GLOBAL  load_tr, farjmp, farcall
 GLOBAL  asm_cons_putchar
 EXTERN  inthandler20, inthandler21, inthandler2c
 EXTERN  cons_putchar
@@ -198,6 +198,10 @@ farjmp: ; void farjmp(int eip, int cs);
 ; taskswitch4:    ; void taskswitch4(void);
 ;     JMP 4*8:0
 ;     RET
+
+farcall: ; void farcall(int eip, int cs);
+    CALL FAR [ESP+4]
+    RET
 
 asm_cons_putchar:
     PUSH    1

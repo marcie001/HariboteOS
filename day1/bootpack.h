@@ -48,6 +48,8 @@ void load_tr(int tr);
 
 void farjmp(int eip, int cs);
 
+void farcall(int eip, int cs);
+
 /* graphic.c */
 void init_palette(void);
 
