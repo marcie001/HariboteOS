@@ -10,6 +10,8 @@ putloop:
     ADD ECX,1
     JMP putloop
 fin:
-    RETF
+    ; 終了 API を呼び出す
+    MOV EDX,4
+    INT 0x40
 msg:
     DB "hello",0

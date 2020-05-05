@@ -24,8 +24,8 @@ build/a.hrb: build/a.o build/a_nasm.o Makefile
 build/hello3.hrb: build/hello3.o build/a_nasm.o Makefile
 	ld -m elf_i386 -e HariMain -o build/hello3.hrb -Tos.ls -Map=build/hello3.map build/hello3.o build/a_nasm.o
 
-build/crack1.hrb: build/crack1.o Makefile
-	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tos.ls -Map=build/crack1.map build/crack1.o
+build/crack1.hrb: build/crack1.o build/a_nasm.o Makefile
+	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tos.ls -Map=build/crack1.map build/crack1.o build/a_nasm.o
 
 build/crack2.hrb: crack2.asm Makefile
 	nasm -l build/crack2.lst -o build/crack2.hrb crack2.asm

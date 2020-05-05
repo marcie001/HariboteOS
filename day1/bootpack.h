@@ -52,7 +52,7 @@ void farjmp(int eip, int cs);
 
 void farcall(int eip, int cs);
 
-void start_app(int eip, int cs, int esp, int ds);
+void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
 
 void asm_hrb_api(void);
 
@@ -354,9 +354,9 @@ void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 /* console.c */
 void console_task(struct SHEET *sheet, unsigned int memtotal);
 
-void hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
+int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
-int inthandler0d(int *esp);
+int *inthandler0d(int *esp);
 
 /* file.c */
 struct FILEINFO {

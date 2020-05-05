@@ -107,98 +107,31 @@ asm_inthandler0d:
     PUSH    ES
     PUSH    DS
     PUSHAD
-    MOV AX,SS
-    CMP AX,1*8
-    JNE .from_app
-    ; OSが動いているときに割り込まれた場合
     MOV EAX,ESP
-    PUSH    SS
-    PUSH    EAX
     MOV AX,SS
     MOV DS,AX
     MOV ES,AX
     CALL    inthandler0d
-    ADD ESP,8
-    POPAD
-    POP DS
-    POP ES
-    ADD ESP,4   ; INT 0x0d ではこの行が必要
-    IRETD
-.from_app:
-    ; アプリが動いているときに割り込まれた場合
-    CLI
-    MOV EAX,1*8
-    MOV DS,AX       ; とりあえず DS だけ OS 用にする
-    MOV ECX,[0xfe4] ; OS の ESP
-    ADD ECX,-8
-    MOV [ECX+4],SS  ; 割り込まれたときの SS を保存
-    MOV [ECX],ESP   ; 割り込まれたときの ESP を保存
-    MOV SS,AX
-    MOV ES,AX
-    MOV ESP,ECX
-    STI
-    CALL    inthandler0d
-    CLI
     CMP EAX,0
-    JNE .kill
-    POP ECX
+    JNE end_app
     POP EAX
-    MOV SS,AX   ; SS をアプリ用に戻す
-    MOV ESP,ECX ; ESP もアプリ用に戻す
     POPAD
     POP DS
     POP ES
     ADD ESP,4   ; INT 0x0d ではこの行が必要
     IRETD
-.kill:
-    ; アプリを異常終了させる
-    MOV EAX,1*8 ; OS 用の DS/SS
-    MOV ES,AX
-    MOV SS,AX
-    MOV DS,AX
-    MOV FS,AX
-    MOV GS,AX
-    MOV ESP,[0xfe4] ; start_app のときの ESP に無理やり戻す
-    STI ; 切り替え完了
-    POPAD ; 保存しておいたレジスタを回復
-    RET
 
 asm_inthandler20:
     PUSH    ES
     PUSH    DS
     PUSHAD
-    MOV AX,SS
-    CMP AX,1*8
-    JNE .from_app
-    ; OSが動いているときに割り込まれた場合
     MOV EAX,ESP
-    PUSH    SS
     PUSH    EAX
     MOV AX,SS
     MOV DS,AX
     MOV ES,AX
-    CALL    inthandler20
-    ADD ESP,8
-    POPAD
-    POP DS
-    POP ES
-    IRETD
-.from_app: ; ドットから始まるラベルはローカルラベル。他の関数で同じ名前のラベルを使っても区別される
-    ; アプリが動いているときに割り込まれた場合
-    MOV EAX,1*8
-    MOV DS,AX       ; とりあえず DS だけ OS 用にする
-    MOV ECX,[0xfe4] ; OS の ESP
-    ADD ECX,-8
-    MOV [ECX+4],SS  ; 割り込まれたときの SS を保存
-    MOV [ECX],ESP   ; 割り込まれたときの ESP を保存
-    MOV SS,AX
-    MOV ES,AX
-    MOV ESP,ECX
-    CALL    inthandler20
-    POP ECX
+    CALL inthandler20
     POP EAX
-    MOV SS,AX   ; SS をアプリ用に戻す
-    MOV ESP,ECX ; ESP もアプリ用に戻す
     POPAD
     POP DS
     POP ES
@@ -208,38 +141,13 @@ asm_inthandler21:
     PUSH    ES
     PUSH    DS
     PUSHAD
-    MOV AX,SS
-    CMP AX,1*8
-    JNE .from_app
-    ; OSが動いているときに割り込まれた場合
     MOV EAX,ESP
-    PUSH    SS
     PUSH    EAX
     MOV AX,SS
     MOV DS,AX
     MOV ES,AX
-    CALL    inthandler21
-    ADD ESP,8
-    POPAD
-    POP DS
-    POP ES
-    IRETD
-.from_app: ; ドットから始まるラベルはローカルラベル。他の関数で同じ名前のラベルを使っても区別される
-    ; アプリが動いているときに割り込まれた場合
-    MOV EAX,1*8
-    MOV DS,AX       ; とりあえず DS だけ OS 用にする
-    MOV ECX,[0xfe4] ; OS の ESP
-    ADD ECX,-8
-    MOV [ECX+4],SS  ; 割り込まれたときの SS を保存
-    MOV [ECX],ESP   ; 割り込まれたときの ESP を保存
-    MOV SS,AX
-    MOV ES,AX
-    MOV ESP,ECX
-    CALL    inthandler21
-    POP ECX
+    CALL inthandler21
     POP EAX
-    MOV SS,AX   ; SS をアプリ用に戻す
-    MOV ESP,ECX ; ESP もアプリ用に戻す
     POPAD
     POP DS
     POP ES
@@ -249,38 +157,13 @@ asm_inthandler2c:
     PUSH    ES
     PUSH    DS
     PUSHAD
-    MOV AX,SS
-    CMP AX,1*8
-    JNE .from_app
-    ; OSが動いているときに割り込まれた場合
     MOV EAX,ESP
-    PUSH    SS
     PUSH    EAX
     MOV AX,SS
     MOV DS,AX
     MOV ES,AX
-    CALL    inthandler2c
-    ADD ESP,8
-    POPAD
-    POP DS
-    POP ES
-    IRETD
-.from_app: ; ドットから始まるラベルはローカルラベル。他の関数で同じ名前のラベルを使っても区別される
-    ; アプリが動いているときに割り込まれた場合
-    MOV EAX,1*8
-    MOV DS,AX       ; とりあえず DS だけ OS 用にする
-    MOV ECX,[0xfe4] ; OS の ESP
-    ADD ECX,-8
-    MOV [ECX+4],SS  ; 割り込まれたときの SS を保存
-    MOV [ECX],ESP   ; 割り込まれたときの ESP を保存
-    MOV SS,AX
-    MOV ES,AX
-    MOV ESP,ECX
-    CALL    inthandler2c
-    POP ECX
+    CALL inthandler2c
     POP EAX
-    MOV SS,AX   ; SS をアプリ用に戻す
-    MOV ESP,ECX ; ESP もアプリ用に戻す
     POPAD
     POP DS
     POP ES
@@ -339,80 +222,48 @@ farcall: ; void farcall(int eip, int cs);
     CALL FAR [ESP+4]
     RET
 
-start_app:  ; void start_app(int eip, int cs, int esp, int ds);
+start_app:  ; void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
     PUSHAD  ; 32 ビットレジスタを全部保存
     MOV EAX,[ESP+36]    ; アプリ用の EIP
     MOV ECX,[ESP+40]    ; アプリ用の CS
     MOV EDX,[ESP+44]    ; アプリ用の ESP
     MOV EBX,[ESP+48]    ; アプリ用の DS/SS
-    MOV [0xfe4],ESP     ; OS 用の ESP
-    CLI ; 切り替え中に割り込みが起きてほしくないので
+    MOV EBP,[ESP+52]    ; tss.esp0 の番地
+    MOV [EBP],ESP     ; OS 用の ESP を保存
+    MOV [EBP+4],SS     ; OS 用の SS を保存
     MOV ES,BX
-    MOV SS,BX
     MOV DS,BX
     MOV FS,BX
     MOV GS,BX
-    MOV ESP,EDX
-    STI ; 切り替え完了
-    PUSH    ECX ; far-CALL のために PUSH(cs)
-    PUSH    EAX ; far-CALL のために PUSH(eip)
-    CALL    FAR [ESP]   ; アプリを呼び出す
-    ; アプリが終了するとここに帰ってくる
-    MOV EAX,1*8 ;OS 用の DS/SS
-    CLI ; 再度切り替えるので
-    MOV ES,AX
-    MOV SS,AX
-    MOV DS,AX
-    MOV FS,AX
-    MOV GS,AX
-    MOV ESP,[0xfe4]
-    STI ; 切り替え完了
-    POPAD   ; 保存しておいたレジスタを回復
-    RET
-
+    ; 以下は RETF でアプリにジャンプさせるためのスタック調整
+    OR  ECX,3   ; アプリ用のセグメント番号に 3 を OR する
+    OR  EBX,3   ; アプリ用のセグメント番号に 3 を OR する
+    PUSH    EBX ; アプリの SS
+    PUSH    EDX ; アプリの ESP
+    PUSH    ECX ; アプリの CS
+    PUSH    EAX ; アプリの EIP
+    RETF
+    ; アプリが終了してもここには戻ってこない
 
 asm_hrb_api:
-    ; 都合のいいことに最初から割り込み禁止になっているので STI は呼ばない
+    STI
     PUSH    DS
     PUSH    ES
-    PUSHAD ; 保存のための PUSH
-    MOV EAX,1*8
-    MOV DS,AX       ; とりあえず DS だけ OS 用にする
-    MOV ECX,[0xfe4] ; OS の ESP
-    ADD ECX,-40
-    MOV [ECX+32],ESP    ; アプリの ESP を保存
-    MOV [ECX+36],SS     ; アプリの SS を保存
-    ; PUSHAD した値をシステムのスタックにコピー
-    MOV EDX,[ESP]
-    MOV EBX,[ESP+4]
-    MOV [ECX],EDX   ; hrb_api に渡すためにコピー
-    MOV [ECX+4],EBX ; hrb_api に渡すためにコピー
-    MOV EDX,[ESP+8]
-    MOV EBX,[ESP+12]
-    MOV [ECX+8],EDX   ; hrb_api に渡すためにコピー
-    MOV [ECX+12],EBX ; hrb_api に渡すためにコピー
-    MOV EDX,[ESP+16]
-    MOV EBX,[ESP+20]
-    MOV [ECX+16],EDX   ; hrb_api に渡すためにコピー
-    MOV [ECX+20],EBX ; hrb_api に渡すためにコピー
-    MOV EDX,[ESP+24]
-    MOV EBX,[ESP+28]
-    MOV [ECX+24],EDX   ; hrb_api に渡すためにコピー
-    MOV [ECX+28],EBX ; hrb_api に渡すためにコピー
-
-    MOV ES,AX   ; 残りのセグメントレジスタも OS 用にする
-    MOV SS,AX
-    MOV ESP,ECX
-    STI
-
+    PUSHAD  ; 保存のための PUSH
+    PUSHAD  ; hrb_api に渡すための PUSH
+    MOV     AX,SS
+    MOV     DS,AX       ; OS 用のセグメントを DS と ES にも入れる
+    MOV     ES,AX
     CALL    hrb_api
-
-    MOV ECX,[ESP+32]    ; アプリの ESP を思い出す
-    MOV EAX,[ESP+36]    ; アプリの SS を思い出す。
-    CLI
-    MOV SS,AX
-    MOV ESP,ECX
+    CMP     EAX,0       ; EAX が 0 でなければアプリ終了処理
+    JNE     end_app
+    ADD     ESP,32
     POPAD
-    POP ES
-    POP DS
-    IRETD   ; この命令が自動で STI してくれる
+    POP     ES
+    POP     DS
+    IRETD
+end_app:
+    ; EAX は tss.esp0 の番地
+    MOV ESP,[EAX]
+    POPAD
+    RET   ; cmd_app へ戻る。この命令が自動で STI してくれる
