@@ -30,6 +30,15 @@ build/crack1.hrb: build/crack1.o build/a_nasm.o Makefile
 build/crack2.hrb: crack2.asm Makefile
 	nasm -l build/crack2.lst -o build/crack2.hrb crack2.asm
 
+build/crack3.hrb: crack3.asm Makefile
+	nasm -l build/crack3.lst -o build/crack3.hrb crack3.asm
+
+build/crack4.hrb: crack4.asm Makefile
+	nasm -l build/crack4.lst -o build/crack4.hrb crack4.asm
+
+build/crack5.hrb: crack5.asm Makefile
+	nasm -l build/crack5.lst -o build/crack5.hrb crack5.asm
+
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
 
@@ -39,7 +48,7 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb build/crack1.hrb build/crack2.hrb
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb build/crack1.hrb build/crack2.hrb build/crack3.hrb build/crack4.hrb build/crack5.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
@@ -50,6 +59,9 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hell
 	mcopy -i build/hariboteos.img build/hello3.hrb ::
 	mcopy -i build/hariboteos.img build/crack1.hrb ::
 	mcopy -i build/hariboteos.img build/crack2.hrb ::
+	mcopy -i build/hariboteos.img build/crack3.hrb ::
+	mcopy -i build/hariboteos.img build/crack4.hrb ::
+	mcopy -i build/hariboteos.img build/crack5.hrb ::
 
 # 一般規則
 
