@@ -9,11 +9,13 @@ GLOBAL  io_out8, io_out16, io_out32
 GLOBAL  io_load_eflags, io_store_eflags
 GLOBAL  load_gdtr, load_idtr
 GLOBAL  load_cr0, store_cr0
-GLOBAL  asm_inthandler0d, asm_inthandler20, asm_inthandler21, asm_inthandler2c
+GLOBAL  asm_inthandler0c, asm_inthandler0d
+GLOBAL  asm_inthandler20, asm_inthandler21, asm_inthandler2c
 GLOBAL  memtest_sub
 GLOBAL  load_tr, farjmp, farcall
 GLOBAL  start_app, asm_hrb_api
-EXTERN  inthandler0d, inthandler20, inthandler21, inthandler2c
+EXTERN  inthandler0c, inthandler0d
+EXTERN  inthandler20, inthandler21, inthandler2c
 EXTERN  hrb_api
 
 SECTION .text
@@ -101,6 +103,25 @@ store_cr0: ; void store_cr0(int cr0);
     MOV EAX,[ESP+4]
     MOV CR0,EAX
     RET
+
+asm_inthandler0c:
+    STI
+    PUSH    ES
+    PUSH    DS
+    PUSHAD
+    MOV EAX,ESP
+    MOV AX,SS
+    MOV DS,AX
+    MOV ES,AX
+    CALL    inthandler0c
+    CMP EAX,0
+    JNE end_app
+    POP EAX
+    POPAD
+    POP DS
+    POP ES
+    ADD ESP,4   ; INT 0x0c ではこの行が必要
+    IRETD
 
 asm_inthandler0d:
     STI

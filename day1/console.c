@@ -380,13 +380,49 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
 }
 
 /**
+ * スタック例外発生時の割り込み処理。
+ * @param esp スタック。詳しくは inthandler0d のドキュメント参照。
+ * @return 常に1（異常終了）
+ */
+int *inthandler0c(int *esp) {
+    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0xfec);
+    struct TASK *task = task_now();
+    char s[30];
+    cons_putstr0(cons, "\nINT 0C :\n Stack Exception.\n");
+    mysprintf(s, "EIP = %x\n", esp[11]);
+    cons_putstr0(cons, s);
+    return &(task->tss.esp0);
+}
+
+/**
  * 一般保護例外発生時の割り込み処理。
- * @param esp
+ * @param esp スタック。
+ * 0 - 7 は asm_inthandler の PUSHAD の結果
+ * 0:   EDI
+ * 1:   ESI
+ * 2:   EBP
+ * 4:   EBX
+ * 5    EDX
+ * 6:   ECX
+ * 7:   EAX
+ * 8 - 9 は asm_inthandler の PUSH の結果
+ * 8:   DS
+ * 9:   ES
+ * 10 - 15 は例外発生時に CPU が自動で PUSH した結果
+ * 10:  エラーコード
+ * 11:  EIP
+ * 12:  CS
+ * 13:  EFLAGS
+ * 14:  ESP（アプリ用）
+ * 15:  SS（アプリ用）
  * @return 常に1（異常終了）
  */
 int *inthandler0d(int *esp) {
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0xfec);
     struct TASK *task = task_now();
+    char s[30];
     cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
+    mysprintf(s, "EIP = %x\n", esp[11]);
+    cons_putstr0(cons, s);
     return &(task->tss.esp0);
 }
