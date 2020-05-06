@@ -113,9 +113,11 @@ void HariMain(void) {
     sheet_updown(sht_win, 2);
     sheet_updown(sht_mouse, 3);
 
+    struct CONSOLE *cons;
     struct FIFO32 keycmd;
     int keycmd_buf[32];
     int i, key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
+    int key_ctrl = 0;
     fifo32_init(&keycmd, 32, keycmd_buf, 0);
     fifo32_put(&keycmd, KEYCMD_LED);
     fifo32_put(&keycmd, key_leds);
@@ -149,6 +151,16 @@ void HariMain(void) {
                         ((key_leds & 4) != 0 && key_shift != 0)) {
                         s[0] += 0x20; // 大文字を小文字に変換
                     }
+                }
+                if (i == 256 + 0x2e && key_ctrl != 0 && task_cons->tss.ss0 != 0) {
+                    // Ctrl + c
+                    cons = (struct CONSOLE *) *((int *) 0x0fec);
+                    cons_putstr0(cons, "\nBreak(key) :\n");
+                    io_cli(); // レジスタ変更中にタスクが変わると困るので
+                    task_cons->tss.eax = (int) &(task_cons->tss.esp0);
+                    task_cons->tss.eip = (int) asm_end_app;
+                    io_sti();
+                    continue;
                 }
                 if (s[0] != 0) {
                     // 通常文字
@@ -202,6 +214,10 @@ void HariMain(void) {
                         fifo32_put(&task_cons->fifo, 10 + 256);
                     }
                 }
+                if (i == 256 + 0x1d) {
+                    // 左 Ctrl ON
+                    key_ctrl |= 1;
+                }
                 if (i == 256 + 0x2a) {
                     // 左シフトON
                     key_shift |= 1;
@@ -209,6 +225,10 @@ void HariMain(void) {
                 if (i == 256 + 0x36) {
                     // 右シフトON
                     key_shift |= 2;
+                }
+                if (i == 256 + 0x9d) {
+                    // 左 Ctrl OFF
+                    key_ctrl &= ~1;
                 }
                 if (i == 256 + 0xaa) {
                     // 左シフトOFF

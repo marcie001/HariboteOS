@@ -58,6 +58,8 @@ void start_app(int eip, int cs, int esp, int ds, int *tss_esp0);
 
 void asm_hrb_api(void);
 
+void asm_end_app(void);
+
 /* graphic.c */
 void init_palette(void);
 
@@ -354,7 +356,20 @@ void putfonts8_asc_sht(struct SHEET *sht, int x, int y, int c, int b, char *s, i
 void make_textbox8(struct SHEET *sht, int x0, int y0, int sx, int sy, int c);
 
 /* console.c */
+struct CONSOLE {
+    struct SHEET *sht;
+    int cur_x, cur_y, cur_c;
+};
+
 void console_task(struct SHEET *sheet, unsigned int memtotal);
+
+void cons_newline(struct CONSOLE *cons);
+
+void cons_putchar(struct CONSOLE *cons, int chr, char move);
+
+void cons_putstr0(struct CONSOLE *cons, char *s);
+
+void cons_putstr1(struct CONSOLE *cons, char *s, int l);
 
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 
