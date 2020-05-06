@@ -232,26 +232,31 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
         finfo = file_search(name, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
     }
     if (finfo != 0) {
+        int segsiz, datsiz, esp, dathrb;
         p = (char *) memman_alloc_4k(memman, finfo->size);
-        q = (char *) memman_alloc_4k(memman, 64 * 1024);
-        *((int *) 0xfe8) = (int) p;
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
-        // 1003 はアプリ用のコードセグメント
-        set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
-        // 1004 はアプリ用のデータセグメント
-        set_segmdesc(gdt + 1004, 64 * 1024 - 1, (int) q, AR_DATA32_RW + 0x60);
-        if (finfo->size >= 8 && myhasprefix(p + 4, "Hari")) {
-            p[0] = 0xe8;
-            p[1] = 0x16;
-            p[2] = 0x00;
-            p[3] = 0x00;
-            p[4] = 0x00;
-            p[5] = 0xcb;
+        if (finfo->size >= 36 && myhasprefix(p + 4, "Hari") && *p == 0x00) {
+            segsiz = *((int *) (p + 0x0000));
+            esp = *((int *) (p + 0x000c));
+            datsiz = *((int *) (p + 0x0010));
+            dathrb = *((int *) (p + 0x0014));
+            q = (char *) memman_alloc_4k(memman, segsiz);
+            *((int *) 0xfe8) = (int) q;
+            // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
+            // 1003 はアプリ用のコードセグメント
+            set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
+            // 1004 はアプリ用のデータセグメント
+            set_segmdesc(gdt + 1004, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);
+            for (i = 0; i < datsiz; i++) {
+                // .hrb ファイル内のデータをデータセグメントにコピー
+                q[esp + i] = p[dathrb + i];
+            }
+            start_app(0x1b, 1003 * 8, 64 * 1024, 1004 * 8, &(task->tss.esp0));
+            memman_free_4k(memman, (int) q, segsiz);
+        } else {
+            cons_putstr0(cons, ".hrb file format error.\n");
         }
-        start_app(0, 1003 * 8, 64 * 1024, 1004 * 8, &(task->tss.esp0));
         memman_free_4k(memman, (int) p, finfo->size);
-        memman_free_4k(memman, (int) q, 64 * 1024);
         cons_newline(cons);
         return 1;
     }
@@ -350,6 +355,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     int cs_base = *((int *) 0xfe8);
     struct TASK *task = task_now();
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    char s[12];
     switch (edx) {
         case 1:
             cons_putchar(cons, eax & 0xff, 1);
