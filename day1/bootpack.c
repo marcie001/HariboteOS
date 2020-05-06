@@ -56,6 +56,7 @@ void HariMain(void) {
 
     init_palette();
     struct SHTCTL *shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
+    *((int *) 0xfe4) = (int) shtctl;
     struct TASK *task_a = task_init(memman);
     fifo.task = task_a;
     task_run(task_a, 1, 0);

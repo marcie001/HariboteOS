@@ -346,28 +346,59 @@ void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
  * @param esi
  * @param ebp
  * @param esp
- * @param ebx 機能番号1, 2のとき、文字列の番地
+ * @param ebx
  * @param edx 機能番号
- * @param ecx 機能番号2のとき、文字数
- * @param eax 機能番号0のとき、文字
+ * @param ecx
+ * @param eax
  */
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
-    int cs_base = *((int *) 0xfe8);
+    int ds_base = *((int *) 0xfe8);
     struct TASK *task = task_now();
     struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
-    char s[12];
+    struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
+    struct SHEET *sht;
+    int *reg = &eax + 1; // eax の次の番地
+    /*
+     * 保存のための PUSHAD を強引に書き換える。
+     * reg[0]: EDI
+     * reg[1]: ESI
+     * reg[2]: EBP
+     * reg[3]: ESP
+     * reg[4]: EBX
+     * reg[5]: EDX
+     * reg[6]: ECX
+     * reg[7]: EAX
+     */
+
     switch (edx) {
         case 1:
+            // eax: 表示する文字
             cons_putchar(cons, eax & 0xff, 1);
             break;
         case 2:
-            cons_putstr0(cons, (char *) ebx + cs_base);
+            // ebx: 表示する文字列の番地
+            cons_putstr0(cons, (char *) ebx + ds_base);
             break;
         case 3:
-            cons_putstr1(cons, (char *) ebx + cs_base, ecx);
+            // ebx: 表示する文字列の番地
+            // ecx: 表示する文字数
+            cons_putstr1(cons, (char *) ebx + ds_base, ecx);
             break;
         case 4:
+            // 終了 API
             return &(task->tss.esp0);
+        case 5:
+            // ebx: ウィンドウのバッファ
+            // ESI: ウィンドウの x 方向の大きさ
+            // EDI: ウィンドウの y 方向の大きさ
+            // EAX: 透明色
+            // ECX: ウィンドウの名前
+            sht = sheet_alloc(shtctl);
+            sheet_setbuf(sht, (char *) ebx + ds_base, esi, edi, eax);
+            make_window8((char *) ebx + ds_base, esi, edi, (char *) ecx + ds_base, 0);
+            sheet_slide(sht, 100, 50);
+            sheet_updown(sht, 3);
+            reg[7] = (int) sht;
     }
     return 0;
 }
