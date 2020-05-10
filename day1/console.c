@@ -431,6 +431,31 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
             sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
             break;
+        case 8:
+            // memman の初期化
+            // EBX: memman の番地
+            // EAX: memman に管理させる領域の最初の番地
+            // ECX: memman に管理させる領域のバイト数
+            memman_init((struct MEMMAN *) (ebx + ds_base));
+            ecx &= 0xfffffff0; // 16 バイト単位にする
+            memman_free((struct MEMMAN *) (ebx + ds_base), eax, ecx);
+            break;
+        case 9:
+            // malloc
+            // EBX: memman の番地
+            // ECX: 要求のバイト数
+            // EAX: 確保した領域の番地
+            ecx = (ecx + 0x0f) & 0xfffffff0; // 16 バイト単位に切り上げ
+            reg[7] = memman_alloc((struct MEMMAN *) (ebx + ds_base), ecx);
+            break;
+        case 10:
+            // free
+            // EBX: memman の番地
+            // EAX: 解放したい領域の番地
+            // ECX: 解放したいバイト数
+            ecx = (ecx + 0x0f) & 0xfffffff0; // 16 バイト単位に切り上げ
+            memman_free((struct MEMMAN *) (ebx + ds_base), eax, ecx);
+            break;
     }
     return 0;
 }
