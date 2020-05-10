@@ -252,8 +252,6 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
                 // .hrb ファイル内のデータをデータセグメントにコピー
                 q[esp + i] = p[dathrb + i];
             }
-            mysprintf(s, "seg: %x\n", segsiz);
-            cons_putstr0(cons, s);
             start_app(0x1b, 1003 * 8, esp, 1004 * 8, &(task->tss.esp0));
             memman_free_4k(memman, (int) q, segsiz);
         } else {
@@ -372,7 +370,6 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
      * reg[6]: ECX
      * reg[7]: EAX
      */
-    char s[30];
     switch (edx) {
         case 1:
             // 文字を表示する
@@ -415,9 +412,11 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // EAX: 色番号
             // ECX: 表示する文字列の長さ
             // EBP: 表示する文字列の番地
-            sht = (struct SHEET *) ebx;
+            sht = (struct SHEET *) (ebx & 0xfffffffe);
             putfonts8_asc(sht->buf, sht->bxsize, esi, edi, eax, (char *) ebp + ds_base);
-            sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
+            if ((ebx & 1) == 0) {
+                sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
+            }
             break;
         case 7:
             // ウィンドウに矩形を表示する
@@ -427,9 +426,11 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // ESI: x1
             // EDI: y1
             // EBP: 色番号
-            sht = (struct SHEET *) ebx;
+            sht = (struct SHEET *) (ebx & 0xfffffffe);
             boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
-            sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
+            if ((ebx & 1) == 0) {
+                sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
+            }
             break;
         case 8:
             // memman の初期化
@@ -455,6 +456,28 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // ECX: 解放したいバイト数
             ecx = (ecx + 0x0f) & 0xfffffff0; // 16 バイト単位に切り上げ
             memman_free((struct MEMMAN *) (ebx + ds_base), eax, ecx);
+            break;
+        case 11:
+            // ウィンドウに点を描画する
+            // EBX: ウィンドウの番号
+            // ESI: 表示位置の x 座標
+            // EDI: 表示位置の y 座標
+            // EAX: 色番号
+            sht = (struct SHEET *) (ebx & 0xfffffffe);
+            sht->buf[sht->bxsize * edi + esi] = eax;
+            if ((ebx & 1) == 0) {
+                sheet_refresh(sht, esi, edi, esi + 1, edi + 1);
+            }
+            break;
+        case 12:
+            // ウィンドウをリフレッシュする
+            // EBX: ウィンドウの番号
+            // EAX: x0
+            // ECX: y0
+            // ESI: x1
+            // EDI: y1
+            sht = (struct SHEET *) ebx;
+            sheet_refresh(sht, eax, ecx, esi, edi);
             break;
     }
     return 0;
