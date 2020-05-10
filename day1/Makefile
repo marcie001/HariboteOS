@@ -12,26 +12,26 @@ build/asmhead.bin : asmhead.asm Makefile
 build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
 	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls -Map=build/bootpack.map $(OBJS_BOOTPACK)
 
-build/hello.hrb: build/hello.o Makefile
-	ld -m elf_i386 -e HariMain -o build/hello.hrb -Tos.ls -Map=build/hello.map build/hello.o
+build/hello.hrb: build/hello.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/hello.hrb -Tapi.ls -Map=build/hello.map build/hello.o
 
-build/hello2.hrb: build/hello2.o Makefile
-	ld -m elf_i386 -e HariMain -o build/hello2.hrb -Tos.ls -Map=build/hello2.map build/hello2.o
+build/hello2.hrb: build/hello2.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/hello2.hrb -Tapi.ls -Map=build/hello2.map build/hello2.o
 
-build/a.hrb: build/a.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/a.hrb -Tos.ls -Map=build/a.map build/a.o build/a_nasm.o
+build/a.hrb: build/a.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/a.hrb -Tapi.ls -Map=build/a.map build/a.o build/a_nasm.o
 
-build/hello3.hrb: build/hello3.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/hello3.hrb -Tos.ls -Map=build/hello3.map build/hello3.o build/a_nasm.o
+build/hello3.hrb: build/hello3.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/hello3.hrb -Tapi.ls -Map=build/hello3.map build/hello3.o build/a_nasm.o
 
-build/hello4.hrb: build/hello4.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/hello4.hrb -Tos.ls -Map=build/hello4.map build/hello4.o build/a_nasm.o
+build/hello4.hrb: build/hello4.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/hello4.hrb -Tapi.ls -Map=build/hello4.map build/hello4.o build/a_nasm.o
 
-build/winhelo.hrb: build/winhelo.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/winhelo.hrb -Tos.ls -Map=build/winhelo.map build/winhelo.o build/a_nasm.o
+build/winhelo.hrb: build/winhelo.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/winhelo.hrb -Tapi.ls -Map=build/winhelo.map build/winhelo.o build/a_nasm.o
 
-build/crack1.hrb: build/crack1.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tos.ls -Map=build/crack1.map build/crack1.o build/a_nasm.o
+build/crack1.hrb: build/crack1.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tapi.ls -Map=build/crack1.map build/crack1.o build/a_nasm.o
 
 build/crack2.hrb: crack2.asm Makefile
 	nasm -l build/crack2.lst -o build/crack2.hrb crack2.asm
@@ -45,11 +45,11 @@ build/crack4.hrb: crack4.asm Makefile
 build/crack5.hrb: crack5.asm Makefile
 	nasm -l build/crack5.lst -o build/crack5.hrb crack5.asm
 
-build/bug1.hrb: build/bug1.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/bug1.hrb -Tos.ls -Map=build/bug1.map build/bug1.o build/a_nasm.o
+build/bug1.hrb: build/bug1.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/bug1.hrb -Tapi.ls -Map=build/bug1.map build/bug1.o build/a_nasm.o
 
-build/bug2.hrb: build/bug2.o build/a_nasm.o Makefile
-	ld -m elf_i386 -e HariMain -o build/bug2.hrb -Tos.ls -Map=build/bug2.map build/bug2.o build/a_nasm.o
+build/bug2.hrb: build/bug2.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/bug2.hrb -Tapi.ls -Map=build/bug2.map build/bug2.o build/a_nasm.o
 
 build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
 	cat build/asmhead.bin build/bootpack.bin > build/os.sys
@@ -82,7 +82,7 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hell
 # 一般規則
 
 build/%.o: %.c Makefile
-	gcc -Os -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
+	gcc -O0 -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
 
 build/%.o: %.asm Makefile
 	nasm -f elf32 -o build/$*.o $*.asm

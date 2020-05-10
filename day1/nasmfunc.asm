@@ -63,7 +63,7 @@ io_out8: ; void io_out8(int port, int data);
 
 io_out16: ; void io_out16(int port, int data);
     MOV EDX,[ESP+4] ; port
-    MOV AX,[ESP+8] ; data
+    MOV EAX,[ESP+8] ; data
     OUT DX,AX
     RET
 

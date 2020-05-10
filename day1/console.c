@@ -210,7 +210,7 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
-    char name[13], *p, *q;
+    char name[18], *p, *q;
     struct TASK *task = task_now();
     int i;
 
@@ -232,6 +232,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
         finfo = file_search(name, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
     }
     if (finfo != 0) {
+        char s[30];
         int segsiz, datsiz, esp, dathrb;
         p = (char *) memman_alloc_4k(memman, finfo->size);
         file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
@@ -251,7 +252,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
                 // .hrb ファイル内のデータをデータセグメントにコピー
                 q[esp + i] = p[dathrb + i];
             }
-            start_app(0x1b, 1003 * 8, 64 * 1024, 1004 * 8, &(task->tss.esp0));
+            mysprintf(s, "seg: %x\n", segsiz);
+            cons_putstr0(cons, s);
+            start_app(0x1b, 1003 * 8, esp, 1004 * 8, &(task->tss.esp0));
             memman_free_4k(memman, (int) q, segsiz);
         } else {
             cons_putstr0(cons, ".hrb file format error.\n");
@@ -369,7 +372,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
      * reg[6]: ECX
      * reg[7]: EAX
      */
-
+    char s[30];
     switch (edx) {
         case 1:
             // eax: 表示する文字
@@ -396,9 +399,20 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             sht = sheet_alloc(shtctl);
             sheet_setbuf(sht, (char *) ebx + ds_base, esi, edi, eax);
             make_window8((char *) ebx + ds_base, esi, edi, (char *) ecx + ds_base, 0);
-            sheet_slide(sht, 100, 50);
+            sheet_slide(sht, 300, 50);
             sheet_updown(sht, 3);
             reg[7] = (int) sht;
+            break;
+        case 6:
+            sht = (struct SHEET *) ebx;
+            putfonts8_asc(sht->buf, sht->bxsize, esi, edi, eax, (char *) ebp + ds_base);
+            sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
+            break;
+        case 7:
+            sht = (struct SHEET *) ebx;
+            boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
+            sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
+            break;
     }
     return 0;
 }
