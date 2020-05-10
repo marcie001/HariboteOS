@@ -375,14 +375,17 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     char s[30];
     switch (edx) {
         case 1:
+            // 文字を表示する
             // eax: 表示する文字
             cons_putchar(cons, eax & 0xff, 1);
             break;
         case 2:
+            // 文字列を表示する
             // ebx: 表示する文字列の番地
             cons_putstr0(cons, (char *) ebx + ds_base);
             break;
         case 3:
+            // ecxに指定した長さだけ文字列を表示する。
             // ebx: 表示する文字列の番地
             // ecx: 表示する文字数
             cons_putstr1(cons, (char *) ebx + ds_base, ecx);
@@ -391,6 +394,7 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // 終了 API
             return &(task->tss.esp0);
         case 5:
+            // ウィンドウを表示する
             // ebx: ウィンドウのバッファ
             // ESI: ウィンドウの x 方向の大きさ
             // EDI: ウィンドウの y 方向の大きさ
@@ -404,11 +408,25 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             reg[7] = (int) sht;
             break;
         case 6:
+            // ウィンドウに文字列を表示する
+            // EBX: ウィンドウの番号
+            // ESI: 表示位置の x 座標
+            // EDI: 表示位置の y 座標
+            // EAX: 色番号
+            // ECX: 表示する文字列の長さ
+            // EBP: 表示する文字列の番地
             sht = (struct SHEET *) ebx;
             putfonts8_asc(sht->buf, sht->bxsize, esi, edi, eax, (char *) ebp + ds_base);
             sheet_refresh(sht, esi, edi, esi + ecx * 8, edi + 16);
             break;
         case 7:
+            // ウィンドウに矩形を表示する
+            // EBX: ウィンドウの番号
+            // EAX: x0
+            // ECX: y0
+            // ESI: x1
+            // EDI: y1
+            // EBP: 色番号
             sht = (struct SHEET *) ebx;
             boxfill8(sht->buf, sht->bxsize, ebp, eax, ecx, esi, edi);
             sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
