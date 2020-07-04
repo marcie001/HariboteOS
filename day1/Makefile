@@ -36,6 +36,9 @@ build/star1.hrb: build/star1.o build/a_nasm.o Makefile api.ls
 build/lines.hrb: build/lines.o build/a_nasm.o Makefile api.ls
 	ld -m elf_i386 -e HariMain -o build/lines.hrb -Tapi.ls -Map=build/lines.map build/lines.o build/a_nasm.o
 
+build/walk.hrb: build/walk.o build/a_nasm.o Makefile api.ls
+	ld -m elf_i386 -e HariMain -o build/walk.hrb -Tapi.ls -Map=build/walk.map build/walk.o build/a_nasm.o
+
 build/crack1.hrb: build/crack1.o build/a_nasm.o Makefile api.ls
 	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tapi.ls -Map=build/crack1.map build/crack1.o build/a_nasm.o
 
@@ -66,7 +69,7 @@ build/ipl10.bin : ipl10.asm Makefile
 build/haribote.sys : haribote.asm Makefile
 	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
 
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb build/hello4.hrb build/winhelo.hrb build/star1.hrb build/lines.hrb build/crack1.hrb build/crack2.hrb build/crack3.hrb build/crack4.hrb build/crack5.hrb build/bug1.hrb build/bug2.hrb
+build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb build/hello4.hrb build/winhelo.hrb build/star1.hrb build/lines.hrb build/walk.hrb build/crack1.hrb build/crack2.hrb build/crack3.hrb build/crack4.hrb build/crack5.hrb build/bug1.hrb build/bug2.hrb
 	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
@@ -79,6 +82,7 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hell
 	mcopy -i build/hariboteos.img build/winhelo.hrb ::
 	mcopy -i build/hariboteos.img build/star1.hrb ::
 	mcopy -i build/hariboteos.img build/lines.hrb ::
+	mcopy -i build/hariboteos.img build/walk.hrb ::
 	mcopy -i build/hariboteos.img build/crack1.hrb ::
 	mcopy -i build/hariboteos.img build/crack2.hrb ::
 	mcopy -i build/hariboteos.img build/crack3.hrb ::
