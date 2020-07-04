@@ -5,7 +5,7 @@ GLOBAL  api_end
 GLOBAL  api_openwin, api_putstrwin, api_boxfilwin
 GLOBAL  api_initmalloc, api_malloc, api_free
 GLOBAL  api_point
-GLOBAL  api_refreshwin, api_linewin
+GLOBAL  api_refreshwin, api_linewin, api_closewin
 
 SECTION .text
 
@@ -160,4 +160,12 @@ api_linewin:    ; void api_linewin(int win, int x0, int y0, int x1, int y1, int 
     POP     EBP
     POP     ESI
     POP     EDI
+    RET
+
+api_closewin:   ; void api_closewin(int win);
+    PUSH    EBX
+    MOV     EDX,14
+    MOV     EBX,[ESP+8] ; win
+    INT     0x40
+    POP     EBX
     RET
