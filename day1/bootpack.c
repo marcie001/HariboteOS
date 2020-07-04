@@ -118,7 +118,7 @@ void HariMain(void) {
     struct FIFO32 keycmd;
     int keycmd_buf[32];
     int i, key_to = 0, key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
-    int key_ctrl = 0;
+    int key_ctrl = 0, key_alt = 0;
     fifo32_init(&keycmd, 32, keycmd_buf, 0);
     fifo32_put(&keycmd, KEYCMD_LED);
     fifo32_put(&keycmd, key_leds);
@@ -188,6 +188,10 @@ void HariMain(void) {
                 }
                 if (i == 256 + 0x0f) {
                     // Tab
+                    if (key_alt != 0 && shtctl->top > 2) {
+                        sheet_updown(shtctl->sheets[1], shtctl->top - 1);
+                        continue;
+                    }
                     if (key_to == 0) {
                         key_to = 1;
                         make_wtitle8(buf_win, sht_win->bxsize, "task_a", 0);
@@ -227,6 +231,10 @@ void HariMain(void) {
                     // 右シフトON
                     key_shift |= 2;
                 }
+                if (i == 256 + 0x38) {
+                    // 左 Alt ON
+                    key_alt |= 1;
+                }
                 if (i == 256 + 0x9d) {
                     // 左 Ctrl OFF
                     key_ctrl &= ~1;
@@ -236,8 +244,12 @@ void HariMain(void) {
                     key_shift &= ~1;
                 }
                 if (i == 256 + 0xb6) {
-                    // 左シフトOFF
+                    // 右シフトOFF
                     key_shift &= ~2;
+                }
+                if (i == 256 + 0xb8) {
+                    // 左 Alt OFF
+                    key_alt &= ~1;
                 }
                 if (i == 256 + 0x3a) {
                     // CapsLock
