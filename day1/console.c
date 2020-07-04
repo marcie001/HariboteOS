@@ -544,12 +544,34 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
                 if (i == 3) {
                     cons->cur_c = -1;
                 }
-                if (256 <= i && i <= 511) {
-                    // キーボードデータ（タスクA経由）
+                if (256 <= i) {
+                    // キーボードデータ（タスクA経由）など
                     reg[7] = i - 256;
                     return 0;
                 }
             }
+            break;
+        case 16:
+            // タイマの取得(alloc)
+            // EAX: タイマ番号（OS から返される）
+            reg[7] = (int) timer_alloc();
+            break;
+        case 17:
+            // タイマの送信データ設定(init)
+            // EBX: タイマ番号
+            // EAX: データ
+            timer_init((struct TIMER *) ebx, &task->fifo, eax + 256);
+            break;
+        case 18:
+            // タイマの時間設定(set)
+            // EBX: タイマ番号
+            // EAX: 時間
+            timer_settime((struct TIMER *) ebx, eax);
+            break;
+        case 19:
+            // タイマの解放(free)
+            // EBX: タイマ番号
+            timer_free((struct TIMER *) ebx);
             break;
     }
     return 0;
