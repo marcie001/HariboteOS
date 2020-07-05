@@ -59,6 +59,7 @@ struct TIMER *timer_alloc(void) {
     for (int i = 0; i < MAX_TIMER; ++i) {
         if (timerctl.timers0[i].flags == 0) {
             timerctl.timers0[i].flags = TIMER_FLAGS_ALLOC;
+            timerctl.timers0[i].flags2 = 0;
             return &timerctl.timers0[i];
         }
     }
@@ -101,4 +102,55 @@ void timer_settime(struct TIMER *timer, unsigned int timeout) {
             return;
         }
     }
+}
+
+int timer_cancel(struct TIMER *timer) {
+    int e;
+    struct TIMER *t;
+    e = io_load_eflags();
+    io_cli(); // 設定中にタイマの状態が変化しないようにするため
+    if (timer->flags == TIMER_FLAGS_USING) {
+        // 取り消し処理を行う
+        if (timer == timerctl.t0) {
+            // 先頭だった場合の取り消し処理
+            timerctl.t0 = t;
+            timerctl.next = t->timeout;
+        } else {
+            //先頭以外の場合の取り消し処理。timerの1つ前を探す
+            t = timerctl.t0;
+            while (1) {
+                if (t->next == timer) {
+                    break;
+                }
+                t = t->next;
+            }
+            t->next = timer->next;
+        }
+        timer->flags = TIMER_FLAGS_ALLOC;
+        io_store_eflags(e);
+        return 1;
+    }
+    // 取り消し処理は不要
+    io_store_eflags(e);
+    return 0;
+}
+
+/**
+ * タイマをすべてキャンセルする
+ * @param fifo FIFO
+ */
+void timer_cancelall(struct FIFO32 *fifo) {
+    int e, i;
+    struct TIMER *t;
+    e = io_load_eflags();
+    io_cli(); // 設定中にタイマの状態が変化しないように
+    for (int i = 0; i < MAX_TIMER; ++i) {
+        t = &timerctl.timers0[i];
+        if (t->flags != 0 && t->flags2 != 0 && t->fifo == fifo) {
+            timer_cancel(t);
+            timer_free(t);
+        }
+    }
+    io_store_eflags(e);
+    return;
 }

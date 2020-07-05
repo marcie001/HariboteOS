@@ -265,6 +265,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
                     sheet_free(sht); // 閉じる
                 }
             }
+            timer_cancelall(&task->fifo);
             memman_free_4k(memman, (int) q, segsiz);
         } else {
             cons_putstr0(cons, ".hrb file format error.\n");
@@ -555,6 +556,8 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // タイマの取得(alloc)
             // EAX: タイマ番号（OS から返される）
             reg[7] = (int) timer_alloc();
+            // 自動キャンセル有効
+            ((struct TIMER *) reg[7])->flags2 = 1;
             break;
         case 17:
             // タイマの送信データ設定(init)
