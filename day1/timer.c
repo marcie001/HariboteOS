@@ -144,7 +144,7 @@ void timer_cancelall(struct FIFO32 *fifo) {
     struct TIMER *t;
     e = io_load_eflags();
     io_cli(); // 設定中にタイマの状態が変化しないように
-    for (int i = 0; i < MAX_TIMER; ++i) {
+    for (i = 0; i < MAX_TIMER; ++i) {
         t = &timerctl.timers0[i];
         if (t->flags != 0 && t->flags2 != 0 && t->fifo == fifo) {
             timer_cancel(t);

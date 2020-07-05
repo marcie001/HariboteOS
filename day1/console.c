@@ -576,6 +576,21 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             // EBX: タイマ番号
             timer_free((struct TIMER *) ebx);
             break;
+        case 20:
+            // BEEP サウンド
+            // EAX: 周波数（単位はmHz:ミリヘルツ）
+            //      例えば EAX = 440000 にすると 440Hz の音が出る。周波数を 0 にすると消音
+            if (eax == 0) {
+                i = io_in8(0x61);
+                io_out8(0x61, i & 0x0d);
+            } else {
+                i = 1193180000 / eax;
+                io_out8(0x43, 0xb6);
+                io_out8(0x42, i & 0xff);
+                io_out8(0x42, i >> 8);
+                i = io_in8(0x61);
+                io_out8(0x61, (i | 0x03) & 0x0f);
+            }
     }
     return 0;
 }
