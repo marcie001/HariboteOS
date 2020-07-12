@@ -118,7 +118,7 @@ void HariMain(void) {
     int my = (binfo->scrny - 28 - 16) / 2;
 
     sheet_slide(sht_back, 0, 0);
-    sheet_slide(sht_cons[1], 56, 6);
+    sheet_slide(sht_cons[1], 56, 300);
     sheet_slide(sht_cons[0], 8, 2);
     sheet_slide(sht_win, 300, 56);
     sheet_slide(sht_mouse, mx, my);

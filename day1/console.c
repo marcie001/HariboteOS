@@ -26,7 +26,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     cons.cur_x = 8;
     cons.cur_y = 28;
     cons.cur_c = -1;
-    *((int *) 0x0fec) = (int) &cons;
+    task->cons = &cons;
 
     fifo32_init(&task->fifo, 128, fifobuf, task);
 
@@ -218,6 +218,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
     struct SHTCTL *shtctl;
     struct SHEET *sht;
 
+
     for (i = 0; i < 13; ++i) {
         if (cmdline[i] <= ' ') {
             break;
@@ -246,7 +247,7 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
             datsiz = *((int *) (p + 0x0010));
             dathrb = *((int *) (p + 0x0014));
             q = (char *) memman_alloc_4k(memman, segsiz);
-            *((int *) 0xfe8) = (int) q;
+            task->ds_base = (int) q;
             // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
             // 1003 はアプリ用のコードセグメント
             set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
@@ -366,9 +367,9 @@ void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
  * @param eax
  */
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax) {
-    int ds_base = *((int *) 0xfe8);
     struct TASK *task = task_now();
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0x0fec);
+    int ds_base = task->ds_base;
+    struct CONSOLE *cons = task->cons;
     struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
     struct SHEET *sht;
     int *reg = &eax + 1; // eax の次の番地
@@ -602,8 +603,8 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
  * @return 常に1（異常終了）
  */
 int *inthandler0c(int *esp) {
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0xfec);
     struct TASK *task = task_now();
+    struct CONSOLE *cons = task->cons;
     char s[30];
     cons_putstr0(cons, "\nINT 0C :\n Stack Exception.\n");
     mysprintf(s, "EIP = %x\n", esp[11]);
@@ -635,8 +636,8 @@ int *inthandler0c(int *esp) {
  * @return 常に1（異常終了）
  */
 int *inthandler0d(int *esp) {
-    struct CONSOLE *cons = (struct CONSOLE *) *((int *) 0xfec);
     struct TASK *task = task_now();
+    struct CONSOLE *cons = task->cons;
     char s[30];
     cons_putstr0(cons, "\nINT 0D :\n General Protected Exception.\n");
     mysprintf(s, "EIP = %x\n", esp[11]);

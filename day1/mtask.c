@@ -7,6 +7,7 @@ struct TASKCTL *taskctl;
 struct TIMER *task_timer;
 
 struct TASK *task_init(struct MEMMAN *memman) {
+    struct TASK *task, *idle;
     struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) ADR_GDT;
     taskctl = (struct TASKCTL *) memman_alloc_4k(memman, sizeof(struct TASKCTL));
     for (int i = 0; i < MAX_TASKS; ++i) {
@@ -18,7 +19,7 @@ struct TASK *task_init(struct MEMMAN *memman) {
         taskctl->level[i].running = 0;
         taskctl->level[i].now = 0;
     }
-    struct TASK *task = task_alloc();
+    task = task_alloc();
     task->flags = 2; //動作中マーク
     task->priority = 2;
     task->level = 0;
@@ -28,7 +29,7 @@ struct TASK *task_init(struct MEMMAN *memman) {
     task_timer = timer_alloc();
     timer_settime(task_timer, task->priority);
 
-    struct TASK *idle = task_alloc();
+    idle = task_alloc();
     idle->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024;
     idle->tss.eip = (int) &task_idle;
     idle->tss.es = 1 * 8;
