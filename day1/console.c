@@ -250,14 +250,14 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
             task->ds_base = (int) q;
             // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
             // 1003 はアプリ用のコードセグメント
-            set_segmdesc(gdt + 1003, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
+            set_segmdesc(gdt + task->sel / 8 + 1000, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
             // 1004 はアプリ用のデータセグメント
-            set_segmdesc(gdt + 1004, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);
+            set_segmdesc(gdt + task->sel / 8 + 2000, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);
             for (i = 0; i < datsiz; i++) {
                 // .hrb ファイル内のデータをデータセグメントにコピー
                 q[esp + i] = p[dathrb + i];
             }
-            start_app(0x1b, 1003 * 8, esp, 1004 * 8, &(task->tss.esp0));
+            start_app(0x1b, task->sel + 1000 * 8, esp, task->sel + 2000 * 8, &(task->tss.esp0));
             shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
             for (i = 0; i < MAX_SHEETS; ++i) {
                 sht = &(shtctl->sheets0[i]);
