@@ -130,6 +130,7 @@ void HariMain(void) {
 
     struct CONSOLE *cons;
     struct FIFO32 keycmd;
+    struct TASK *task;
     int keycmd_buf[32];
     int key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
     int key_ctrl = 0, key_alt = 0;
@@ -174,15 +175,17 @@ void HariMain(void) {
                         s[0] += 0x20; // 大文字を小文字に変換
                     }
                 }
-                if (i == 256 + 0x2e && key_ctrl != 0 && task_cons[0]->tss.ss0 != 0) {
+                if (i == 256 + 0x2e && key_ctrl != 0) {
                     // Ctrl + c
-                    cons = (struct CONSOLE *) *((int *) 0x0fec);
-                    cons_putstr0(cons, "\nBreak(key) :\n");
-                    io_cli(); // レジスタ変更中にタスクが変わると困るので
-                    task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
-                    task_cons[0]->tss.eip = (int) asm_end_app;
-                    io_sti();
-                    continue;
+                    task = key_win->task;
+                    if (task->tss.ss0 != 0) {
+                        cons_putstr0(task->cons, "\nBreak(key) :\n");
+                        io_cli(); // レジスタ変更中にタスクが変わると困るので
+                        task->tss.eax = (int) &(task->tss.esp0);
+                        task->tss.eip = (int) asm_end_app;
+                        io_sti();
+                        continue;
+                    }
                 }
                 if (s[0] != 0) {
                     // 通常文字
@@ -336,11 +339,11 @@ void HariMain(void) {
                                             // 「❌」ボタンクリック
                                             if ((sht->flags & 0x10) != 0) {
                                                 // アプリが作ったウィンドウの場合
-                                                cons = (struct CONSOLE *) *((int *) 0x0fec);
-                                                cons_putstr0(cons, "\nBreak(mouse) :\n");
+                                                task = sht->task;
+                                                cons_putstr0(task->cons, "\nBreak(mouse) :\n");
                                                 io_cli(); // 強制終了痛にタスクが変わると困るので
-                                                task_cons[0]->tss.eax = (int) &(task_cons[0]->tss.esp0);
-                                                task_cons[0]->tss.eip = (int) asm_end_app;
+                                                task->tss.eax = (int) &(task->tss.esp0);
+                                                task->tss.eip = (int) asm_end_app;
                                                 io_sti();
                                             }
                                         }
