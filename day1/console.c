@@ -249,9 +249,9 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
             q = (char *) memman_alloc_4k(memman, segsiz);
             task->ds_base = (int) q;
             // 1 - 2 は dsctbl.c で、 3 - 1002 は mtask.c で使っている
-            // 1003 はアプリ用のコードセグメント
+            // task->sel / 8 + 1000 はアプリ用のコードセグメント
             set_segmdesc(gdt + task->sel / 8 + 1000, finfo->size - 1, (int) p, AR_CODE32_ER + 0x60);
-            // 1004 はアプリ用のデータセグメント
+            // task->sel / 8 + 2000 はアプリ用のデータセグメント
             set_segmdesc(gdt + task->sel / 8 + 2000, segsiz - 1, (int) q, AR_DATA32_RW + 0x60);
             for (i = 0; i < datsiz; i++) {
                 // .hrb ファイル内のデータをデータセグメントにコピー
