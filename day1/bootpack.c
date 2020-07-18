@@ -73,10 +73,7 @@ void HariMain(void) {
     sheet_setbuf(sht_back, buf_back, binfo->scrnx, binfo->scrny, -1); // 透明色なし
     init_screen(buf_back, binfo->scrnx, binfo->scrny);
 
-    // sht_cons
-    struct SHEET *sht_cons[2];
-    sht_cons[0] = open_console(shtctl, memtotal);
-    sht_cons[1] = 0;
+    struct SHEET *key_win = open_console(shtctl, memtotal);
 
     // sht_mouse
     struct SHEET *sht_mouse = sheet_alloc(shtctl);
@@ -86,10 +83,10 @@ void HariMain(void) {
     int my = (binfo->scrny - 28 - 16) / 2;
 
     sheet_slide(sht_back, 0, 0);
-    sheet_slide(sht_cons[0], 8, 2);
+    sheet_slide(key_win, 8, 2);
     sheet_slide(sht_mouse, mx, my);
     sheet_updown(sht_back, 0);
-    sheet_updown(sht_cons[0], 1);
+    sheet_updown(key_win, 1);
     sheet_updown(sht_mouse, 2);
 
     struct CONSOLE *cons;
@@ -100,7 +97,7 @@ void HariMain(void) {
     int key_ctrl = 0, key_alt = 0;
     int i, j, x, y, mmx = -1, mmy = -1, mmx2 = 0;
     int new_mx = -1, new_my = 0, new_wx = 0x7fffffff, new_wy = 0;
-    struct SHEET *sht = 0, *key_win = sht_cons[0];
+    struct SHEET *sht = 0;
     keywin_on(key_win);
     fifo32_init(&keycmd, 32, keycmd_buf, 0);
     fifo32_put(&keycmd, KEYCMD_LED);
@@ -163,13 +160,12 @@ void HariMain(void) {
                         continue;
                     }
                 }
-                if (i == 256 + 0x14 && key_ctrl != 0 && key_shift != 0 && sht_cons[1] == 0) {
+                if (i == 256 + 0x14 && key_ctrl != 0 && key_shift != 0) {
                     // Ctrl + Shift + t
-                    sht_cons[1] = open_console(shtctl, memtotal);
-                    sheet_slide(sht_cons[1], 32, 4);
-                    sheet_updown(sht_cons[1], shtctl->top);
                     keywin_off(key_win);
-                    key_win = sht_cons[1];
+                    key_win = open_console(shtctl, memtotal);
+                    sheet_slide(key_win, 32, 4);
+                    sheet_updown(key_win, shtctl->top);
                     keywin_on(key_win);
                     continue;
                 }
