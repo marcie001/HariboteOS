@@ -19,7 +19,6 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
     struct TASK *task = task_now();
-    int fifobuf[128];
 
     struct CONSOLE cons;
     cons.sht = sheet;
@@ -27,8 +26,6 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     cons.cur_y = 28;
     cons.cur_c = -1;
     task->cons = &cons;
-
-    fifo32_init(&task->fifo, 128, fifobuf, task);
 
     cons.timer = timer_alloc();
     timer_init(cons.timer, &task->fifo, 1);
