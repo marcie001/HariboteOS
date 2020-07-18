@@ -135,8 +135,8 @@ void sheet_refresh(struct SHEET *sht, int bx0, int by0, int bx1, int by1) {
 }
 
 void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0, int h1) {
-    int h, bx, by, bx0, by0, bx1, by1, vx, vy;
-    unsigned char *buf, c, *vram = ctl->vram, *map = ctl->map, sid;
+    int h, bx, by, bx0, by0, bx1, by1, vx, vy, bx2, sid4, i, i1, *p, *q, *r, j;
+    unsigned char *buf, *vram = ctl->vram, *map = ctl->map, sid;
     struct SHEET *sht;
     if (vx0 < 0) {
         vx0 = 0;
@@ -171,6 +171,54 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
         if (by1 > sht->bysize) {
             by1 = sht->bysize;
         }
+        if ((sht->vx0 & 3) == 0) {
+            // 4バイト型
+            i = (bx0 + 3) / 4; // bx0を4で割ったもの（端数切り上げ）
+            i1 = bx1 / 4; // bx1を4で割ったもの（端数切り捨て）
+            i1 = i1 - i;
+            sid4 = sid | sid << 8 | sid << 16 | sid << 24;
+            for (by = by0; by < by1; by++) {
+                vy = sht->vy0 + by;
+
+                // 前の端数を1バイトずつ処理
+                for (bx = bx0; bx < bx1 && (bx & 3) != 0; bx++) {
+                    vx = sht->vx0 + bx;
+                    if (map[vy * ctl->xsize + vx] == sid) {
+                        vram[vy * ctl->xsize + vx] = buf[by * sht->bxsize + bx];
+                    }
+                }
+                vx = sht->vx0 + bx;
+                p = (int *) &map[vy * ctl->xsize + vx];
+                q = (int *) &vram[vy * ctl->xsize + vx];
+                r = (int *) &buf[by * sht->bxsize + bx];
+
+                // 4の倍数部分の処理
+                for (i = 0; i < i1; i++) {
+                    if (p[i] == sid4) {
+                        // おそらく多くの場合はこちらのブロックの処理になるので速い
+                        q[i] = r[i];
+                    } else {
+                        bx2 = bx + i * 4;
+                        vx = sht->vx0 + bx2;
+                        for (j = 0; j < 4; j++) {
+                            if (map[vy * ctl->xsize + vx + j] == sid) {
+                                vram[vy * ctl->xsize + vx + j] = buf[by * sht->bxsize + bx2 + j];
+                            }
+                        }
+                    }
+                }
+
+                //後ろの端数を1バイトずつ処理
+                for (bx += i1 * 4; bx < bx1; bx++) {
+                    vx = sht->vx0 + bx;
+                    if (map[vy * ctl->xsize + vx] == sid) {
+                        vram[vy * ctl->xsize + vx] = buf[by * sht->bxsize + bx];
+                    }
+                }
+            }
+            continue;
+        }
+        // 1バイト型
         for (by = by0; by < by1; by++) {
             vy = sht->vy0 + by;
             for (bx = bx0; bx < bx1; bx++) {
