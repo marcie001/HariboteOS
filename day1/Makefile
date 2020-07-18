@@ -105,7 +105,7 @@ build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hell
 
 # 一般規則
 
-build/%.o: %.c Makefile
+build/%.o: %.c bootpack.h Makefile
 	gcc -O0 -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
 
 build/%.o: %.asm Makefile

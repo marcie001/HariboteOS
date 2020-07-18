@@ -8,6 +8,10 @@ void keywin_on(struct SHEET *key_win);
 
 struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
 
+void close_constask(struct TASK *task);
+
+void close_console(struct SHEET *sht);
+
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) ADR_BOOTINFO;
     struct FIFO32 fifo;
@@ -48,6 +52,7 @@ void HariMain(void) {
     io_sti();
 
     fifo32_init(&fifo, 128, fifobuf, 0);
+    *((int *) 0x0fec) = (int) &fifo;
     init_pit();
     io_out8(PIC0_IMR, 0xf8); // PITとPIC1とキーボードを許可（11111000)
     io_out8(PIC1_IMR, 0xef); // マウスを許可(11101111)
@@ -126,9 +131,14 @@ void HariMain(void) {
         } else {
             i = fifo32_get(&fifo);
             io_sti();
-            if (key_win->flags == 0) {
-                // 入力ウィンドウが閉じられた
-                key_win = shtctl->sheets[shtctl->top - 1];
+            if (key_win != 0 && key_win->flags == 0) {
+                // ウィンドウが閉じられた
+                if (shtctl->top == 1) {
+                    key_win = 0;
+                } else {
+                    key_win = shtctl->sheets[shtctl->top - 1];
+                    keywin_on(key_win);
+                }
             }
             if (256 <= i && i <= 511) {
                 // キーボードデータ
@@ -162,23 +172,25 @@ void HariMain(void) {
                 }
                 if (i == 256 + 0x14 && key_ctrl != 0 && key_shift != 0) {
                     // Ctrl + Shift + t
-                    keywin_off(key_win);
+                    if (key_win != 0) {
+                        keywin_off(key_win);
+                    }
                     key_win = open_console(shtctl, memtotal);
                     sheet_slide(key_win, 32, 4);
                     sheet_updown(key_win, shtctl->top);
                     keywin_on(key_win);
                     continue;
                 }
-                if (s[0] != 0) {
+                if (s[0] != 0 && key_win != 0) {
                     // 通常文字
                     // コンソールへ
                     fifo32_put(&key_win->task->fifo, s[0] + 256);
                 }
-                if (i == 256 + 0x0e) {
+                if (i == 256 + 0x0e && key_win != 0) {
                     // バックスペース
                     fifo32_put(&key_win->task->fifo, 8 + 256);
                 }
-                if (i == 256 + 0x0f) {
+                if (i == 256 + 0x0f && key_win != 0) {
                     // Tab
                     if (key_alt != 0 && shtctl->top > 2) {
                         sheet_updown(shtctl->sheets[1], shtctl->top - 1);
@@ -192,7 +204,7 @@ void HariMain(void) {
                         keywin_on(key_win);
                     }
                 }
-                if (i == 256 + 0x1c) {
+                if (i == 256 + 0x1c && key_win != 0) {
                     // Enter
                     fifo32_put(&key_win->task->fifo, 10 + 256);
                 }
@@ -331,6 +343,8 @@ void HariMain(void) {
                         }
                     }
                 }
+            } else if (768 <= i && i <= 1023) {
+                close_console(shtctl->sheets0 + (i - 768));
             }
         }
     }
@@ -362,7 +376,8 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal) {
     make_window8(buf, 256, 165, "console", 0);
     make_textbox8(sht, 8, 28, 240, 128, COL8_000000);
     struct TASK *task = task_alloc();
-    task->tss.esp = memman_alloc_4k(memman, 64 * 1024) + 64 * 1024 - 12;
+    task->cons_stack = memman_alloc_4k(memman, 64 * 1024);
+    task->tss.esp = task->cons_stack + 64 * 1024 - 12;
     task->tss.eip = (int) &console_task;
     task->tss.es = 1 * 8;
     task->tss.cs = 2 * 8;
@@ -378,4 +393,22 @@ struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal) {
     int *cons_fifo = (int *) memman_alloc_4k(memman, 128 * 4);
     fifo32_init(&task->fifo, 128, cons_fifo, task);
     return sht;
+}
+
+void close_constask(struct TASK *task) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    task_sleep(task);
+    memman_free_4k(memman, task->cons_stack, 64 * 1024);
+    memman_free_4k(memman, (int) task->fifo.buf, 128 * 4);
+    task->flags = 0; // task_free(task)の代わり
+    return;
+}
+
+void close_console(struct SHEET *sht) {
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    struct TASK *task = sht->task;
+    memman_free_4k(memman, (int) sht->buf, 256 * 165);
+    sheet_free(sht);
+    close_constask(task);
+    return;
 }

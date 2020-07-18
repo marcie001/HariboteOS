@@ -284,6 +284,8 @@ void timer_init(struct TIMER *timer, struct FIFO32 *fifo, int data);
 
 void timer_settime(struct TIMER *timer, unsigned int timeout);
 
+int timer_cancel(struct TIMER *timer);
+
 void timer_cancelall(struct FIFO32 *fifo);
 
 /* mtask.c */
@@ -312,7 +314,7 @@ struct TASK {
     struct FIFO32 fifo;
     struct TSS32 tss;
     struct CONSOLE *cons;
-    int ds_base;
+    int ds_base, cons_stack;
 };
 
 struct TASKLEVEL {
