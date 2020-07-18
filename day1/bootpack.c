@@ -123,6 +123,7 @@ void HariMain(void) {
     int key_shift = 0, key_leds = (binfo->leds >> 4) & 7, keycmd_wait = -1;
     int key_ctrl = 0, key_alt = 0;
     int j, x, y, mmx = -1, mmy = -1, mmx2 = 0;
+    int new_mx = -1, new_my = 0, new_wx = 0x7fffffff, new_wy = 0;
     struct SHEET *sht = 0, *key_win = sht_cons[0];
     keywin_on(key_win);
     fifo32_init(&keycmd, 32, keycmd_buf, 0);
@@ -136,8 +137,19 @@ void HariMain(void) {
         }
         io_cli();
         if (fifo32_status(&fifo) == 0) {
-            task_sleep(task_a);
-            io_sti();
+            // FIFOが空になったので、保留している描画があれば実行
+            if (new_mx >= 0) {
+                io_sti();
+                sheet_slide(sht_mouse, new_mx, new_my);
+                new_mx = -1;
+            } else if (new_wx != 0x7fffffff) {
+                io_sti();
+                sheet_slide(sht, new_wx, new_wy);
+                new_wx = 0x7fffffff;
+            } else {
+                task_sleep(task_a);
+                io_sti();
+            }
         } else {
             i = fifo32_get(&fifo);
             io_sti();
@@ -280,6 +292,8 @@ void HariMain(void) {
                     }
                     sheet_slide(sht_mouse, mx, my);
 
+                    new_mx = mx;
+                    new_my = my;
                     if ((mdec.btn & 0x01) != 0) {
                         // 左ボタン
                         if (mmx < 0) {
@@ -300,6 +314,7 @@ void HariMain(void) {
                                             mmx = mx;
                                             mmy = my;
                                             mmx2 = sht->vx0;
+                                            new_wy = sht->vy0;
                                         }
                                         if (sht->bxsize - 21 <= x && x < sht->bxsize - 5 && 5 <= y && y < 19) {
                                             // 「❌」ボタンクリック
@@ -321,12 +336,17 @@ void HariMain(void) {
                             // ウィンドウ移動モードの場合
                             x = mx - mmx; // マウスの移動量を計算
                             y = my - mmy;
-                            sheet_slide(sht, (mmx2 + x + 2) & ~3, sht->vy0 + y);
+                            new_wx = (mmx2 + x + 2) & ~3;
+                            new_wy = new_wy + y;
                             mmy = my; // 移動後の座標に更新
                         }
                     } else {
                         // 左ボタンを押していない
                         mmx = -1;
+                        if (new_wx != 0x7fffffff) {
+                            sheet_slide(sht, new_wx, new_wy);
+                            new_wx = 0x7fffffff;
+                        }
                     }
                 }
             }
