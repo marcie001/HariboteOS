@@ -124,6 +124,7 @@ void load_idtr(int limit, int adr);
 #define LIMIT_BOTPAK 0x0007ffff
 #define AR_DATA32_RW 0x4092
 #define AR_CODE32_ER 0x409a
+#define AR_LDT 0x0082
 #define AR_INTGATE32 0x008e
 #define AR_TSS32 0x0089
 
@@ -313,6 +314,7 @@ struct TASK {
     int level, priority;
     struct FIFO32 fifo;
     struct TSS32 tss;
+    struct SEGMENT_DESCRIPTOR ldt[2];
     struct CONSOLE *cons;
     int ds_base, cons_stack;
 };
