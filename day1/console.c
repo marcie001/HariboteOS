@@ -19,6 +19,8 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
 
 void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
 
+void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
+
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
     struct TASK *task = task_now();
 
@@ -204,6 +206,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
         cmd_cat(cons, fat, cmdline);
     } else if (mystrcmp(cmdline, "exit") == 0) {
         cmd_exit(cons, fat);
+    } else if (myindexof(cmdline, "start ") == 0) {
+        cmd_start(cons, cmdline, memtotal);
     } else if (cmdline[0] != 0) {
         if (cmd_app(cons, fat, cmdline) == 0) {
             // 存在しないコマンドの実行
@@ -372,6 +376,20 @@ void cmd_exit(struct CONSOLE *cons, int *fat) {
     while (1) {
         task_sleep(task);
     }
+}
+
+void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal) {
+    struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
+    struct SHEET *sht = open_console(shtctl, memtotal);
+    struct FIFO32 *fifo = &sht->task->fifo;
+    sheet_slide(sht, 32, 4);
+    sheet_updown(sht, shtctl->top);
+    for (int i = 6; cmdline[i] != 0; ++i) {
+        fifo32_put(fifo, cmdline[i] + 256);
+    }
+    fifo32_put(fifo, 10 + 256); // Enter 送信
+    cons_newline(cons);
+    return;
 }
 
 /**

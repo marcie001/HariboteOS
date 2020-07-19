@@ -409,3 +409,6 @@ int mystrcmp(unsigned char *s1, unsigned char *s2);
 int myindexof(unsigned char *str, unsigned char *substr);
 
 int myhasprefix(unsigned char *str, unsigned char *prefix);
+
+/* bootpack.c */
+struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
