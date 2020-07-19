@@ -412,3 +412,5 @@ int myhasprefix(unsigned char *str, unsigned char *prefix);
 
 /* bootpack.c */
 struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
+
+struct TASK *open_constask(struct SHEET *sht, int memtotal);
