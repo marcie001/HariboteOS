@@ -1,25 +1,7 @@
 //
 // Created by marcie on 2020/07/04.
 //
-int api_openwin(char *buf, int xsiz, int ysiz, int col_inv, char *title);
-
-void api_initmalloc(void);
-
-char *api_malloc(int size);
-
-int api_getkey(int mode);
-
-void api_putstrwin(int win, int x, int y, int col, int len, char *str);
-
-void api_boxfilwin(int win, int x0, int y0, int x1, int y1, int col);
-
-int api_alloctimer(void);
-
-void api_inittimer(int timer, int date);
-
-void api_settimer(int timer, int time);
-
-void api_end(void);
+#include "libapi.h"
 
 void mysprintf(char *str, char *fmt, ...);
 

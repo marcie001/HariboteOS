@@ -1,10 +1,7 @@
 //
 // Created by marcie on 2020/05/05.
 //
-
-void api_putchar(int c);
-
-void api_end(void);
+#include "libapi.h"
 
 void HariMain(void) {
     char a[100];

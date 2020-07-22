@@ -1,19 +1,7 @@
 //
 // Created by marcie on 2020/07/05.
 //
-void api_end(void);
-
-int api_openwin(char *buf, int xsiz, int ysiz, int col_inv, char *title);
-
-void api_initmalloc(void);
-
-char *api_malloc(int size);
-
-void api_refreshwin(int win, int x0, int y0, int x1, int y1);
-
-void api_linewin(int win, int x0, int y0, int x1, int y1, int col);
-
-int api_getkey(int mode);
+#include "libapi.h"
 
 unsigned char rgb2pal(int r, int g, int b, int x, int y);
 
