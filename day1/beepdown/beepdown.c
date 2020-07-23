@@ -1,17 +1,7 @@
 //
 // Created by marcie on 2020/07/05.
 //
-void api_end(void);
-
-int api_getkey(int mode);
-
-int api_alloctimer(void);
-
-void api_inittimer(int timer, int date);
-
-void api_settimer(int timer, int time);
-
-void api_beep(int tone);
+#include "libapi.h"
 
 void HariMain(void) {
     int i, timer;

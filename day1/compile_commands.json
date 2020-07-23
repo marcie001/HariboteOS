@@ -7,41 +7,13 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
-            "-o",
-            "build/bug2.o",
-            "bug2.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "bug2.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/memory.o",
-            "memory.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "memory.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
             "build/sheet.o",
             "sheet.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
         "file": "sheet.c"
     },
     {
@@ -52,12 +24,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/keyboard.o",
-            "keyboard.c"
+            "build/timer.o",
+            "timer.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "keyboard.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "timer.c"
     },
     {
         "arguments": [
@@ -67,101 +41,13 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
-            "-o",
-            "build/hello4.o",
-            "hello4.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "hello4.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/file.o",
-            "file.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "file.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/a.o",
-            "a.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "a.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/graphic.o",
-            "graphic.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "graphic.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/mysprintf.o",
-            "mysprintf.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "mysprintf.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/star1.o",
-            "star1.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "star1.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
             "build/bootpack.o",
             "bootpack.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
         "file": "bootpack.c"
     },
     {
@@ -176,7 +62,7 @@
             "build/mystring.o",
             "mystring.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/libcommon",
         "file": "mystring.c"
     },
     {
@@ -187,12 +73,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/mouse.o",
-            "mouse.c"
+            "build/int.o",
+            "int.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "mouse.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "int.c"
     },
     {
         "arguments": [
@@ -202,12 +90,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/winhelo.o",
-            "winhelo.c"
+            "build/dsctbl.o",
+            "dsctbl.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "winhelo.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "dsctbl.c"
     },
     {
         "arguments": [
@@ -217,12 +107,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/mtask.o",
-            "mtask.c"
+            "build/a.o",
+            "a.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "mtask.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/a",
+        "file": "a.c"
     },
     {
         "arguments": [
@@ -232,12 +124,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/window.o",
-            "window.c"
+            "build/hankaku.o",
+            "hankaku.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "window.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "hankaku.c"
     },
     {
         "arguments": [
@@ -247,12 +141,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/beepdown.o",
-            "beepdown.c"
+            "build/file.o",
+            "file.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "beepdown.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "file.c"
     },
     {
         "arguments": [
@@ -262,12 +158,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/bug1.o",
-            "bug1.c"
+            "build/hello3.o",
+            "hello3.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "bug1.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/hello3",
+        "file": "hello3.c"
     },
     {
         "arguments": [
@@ -277,12 +175,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/lines.o",
-            "lines.c"
+            "build/memory.o",
+            "memory.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "lines.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "memory.c"
     },
     {
         "arguments": [
@@ -292,12 +192,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/timer.o",
-            "timer.c"
+            "build/graphic.o",
+            "graphic.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "timer.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "graphic.c"
     },
     {
         "arguments": [
@@ -307,12 +209,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/noodle.o",
-            "noodle.c"
+            "build/hello4.o",
+            "hello4.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "noodle.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/hello4",
+        "file": "hello4.c"
     },
     {
         "arguments": [
@@ -322,41 +226,13 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
-            "-o",
-            "build/fifo.o",
-            "fifo.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "fifo.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
-            "-o",
-            "build/crack1.o",
-            "crack1.c"
-        ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "crack1.c"
-    },
-    {
-        "arguments": [
-            "cc",
-            "-c",
-            "-O0",
-            "-m32",
-            "-fno-pic",
-            "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
             "build/console.o",
             "console.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
         "file": "console.c"
     },
     {
@@ -368,11 +244,11 @@
             "-fno-pic",
             "-nostdlib",
             "-o",
-            "build/hankaku.o",
-            "hankaku.c"
+            "build/mysprintf.o",
+            "mysprintf.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "hankaku.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/libcommon",
+        "file": "mysprintf.c"
     },
     {
         "arguments": [
@@ -382,12 +258,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/hello3.o",
-            "hello3.c"
+            "build/mouse.o",
+            "mouse.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "hello3.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "mouse.c"
     },
     {
         "arguments": [
@@ -397,12 +275,14 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/dsctbl.o",
-            "dsctbl.c"
+            "build/noodle.o",
+            "noodle.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "dsctbl.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/noodle",
+        "file": "noodle.c"
     },
     {
         "arguments": [
@@ -412,11 +292,47 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/window.o",
+            "window.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "window.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/star1.o",
+            "star1.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/star1",
+        "file": "star1.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
             "build/walk.o",
             "walk.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/walk",
         "file": "walk.c"
     },
     {
@@ -427,11 +343,115 @@
             "-m32",
             "-fno-pic",
             "-nostdlib",
+            "-iquote",
+            "..",
             "-o",
-            "build/int.o",
-            "int.c"
+            "build/color.o",
+            "color.c"
         ],
-        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1",
-        "file": "int.c"
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/color",
+        "file": "color.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/lines.o",
+            "lines.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/lines",
+        "file": "lines.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/fifo.o",
+            "fifo.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "fifo.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/winhelo.o",
+            "winhelo.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/winhelo",
+        "file": "winhelo.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/beepdown.o",
+            "beepdown.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/beepdown",
+        "file": "beepdown.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/keyboard.o",
+            "keyboard.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "keyboard.c"
+    },
+    {
+        "arguments": [
+            "cc",
+            "-c",
+            "-O0",
+            "-m32",
+            "-fno-pic",
+            "-nostdlib",
+            "-iquote",
+            "..",
+            "-o",
+            "build/mtask.o",
+            "mtask.c"
+        ],
+        "directory": "/home/marcie/go/src/github.com/marcie001/HariboteOS/day1/haribote",
+        "file": "mtask.c"
     }
 ]

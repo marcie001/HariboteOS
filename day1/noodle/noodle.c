@@ -2,8 +2,7 @@
 // Created by marcie on 2020/07/04.
 //
 #include "libapi.h"
-
-void mysprintf(char *str, char *fmt, ...);
+#include "libcommon.h"
 
 void HariMain(void) {
     char *buf, s[12];
