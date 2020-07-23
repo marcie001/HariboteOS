@@ -11,7 +11,7 @@ build/ :
 build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys Makefile \
 		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
-		beepdown/build/beepdown.hrb color/build/color.hrb 
+		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
@@ -25,6 +25,7 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys Mak
 	mcopy -i build/hariboteos.img noodle/build/noodle.hrb ::
 	mcopy -i build/hariboteos.img beepdown/build/beepdown.hrb ::
 	mcopy -i build/hariboteos.img color/build/color.hrb ::
+	mcopy -i build/hariboteos.img sosu/build/sosu.hrb ::
 
 # コマンド
 run :
@@ -49,6 +50,7 @@ full :
 	make -C noodle
 	make -C beepdown
 	make -C color
+	make -C sosu
 	make build/hariboteos.img
 
 run_full :
@@ -80,6 +82,7 @@ clean_full :
 	make -C noodle clean
 	make -C beepdown clean
 	make -C color clean
+	make -C sosu clean
 
 src_only_full :
 	make -C libcommon src_only
@@ -95,3 +98,4 @@ src_only_full :
 	make -C noodle src_only
 	make -C beepdown src_only
 	make -C color src_only
+	make -C sosu src_only
