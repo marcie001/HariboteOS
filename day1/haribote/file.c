@@ -2,6 +2,7 @@
 // Created by marcie on 2020/05/02.
 //
 #include "bootpack.h"
+#include "libcommon.h"
 
 /**
  * ディスクイメージ内の圧縮を展開する

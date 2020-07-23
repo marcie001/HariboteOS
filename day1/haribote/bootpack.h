@@ -402,16 +402,6 @@ void file_loadfile(int clustno, int size, char *buf, int *fat, char *img);
 
 struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max);
 
-/* mysprintf.c */
-void mysprintf(char *str, char *fmt, ...);
-
-/* mystring.c */
-int mystrcmp(unsigned char *s1, unsigned char *s2);
-
-int myindexof(unsigned char *str, unsigned char *substr);
-
-int myhasprefix(unsigned char *str, unsigned char *prefix);
-
 /* bootpack.c */
 struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
 

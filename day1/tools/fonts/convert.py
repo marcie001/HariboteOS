@@ -13,7 +13,7 @@ with open("hankaku.txt", "r", encoding="cp932") as r:
         line = line.replace("*", "1")
         s.append(int(line.replace(".", "0").replace("*", "1"), 2))
 
-with open("../../hankaku.c", "w") as w:
+with open("../../haribote/hankaku.c", "w") as w:
     w.write("char hankaku[4096] = {\n")
     for ch in chunks(s, 16):
         s = ", ".join([hex(c) for c in ch])

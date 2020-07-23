@@ -1,0 +1,58 @@
+LIBAPI_PATH = ../libapi/
+LIBAPI_BUILD_PATH = $(LIBAPI_PATH)build/
+LIBCOMMON_PATH = ../libcommon/
+LIBCOMMON_BUILD_PATH = $(LIBCOMMON_PATH)build/
+HARIBOTE_PATH = ../haribote/
+HARIBOTE_BUILD_PATH = $(HARIBOTE_PATH)build/
+# デフォルト動作
+
+default :
+	make build/$(APP).hrb
+
+# ファイル生成規則
+
+build/ :
+	mkdir build
+
+build/$(APP).hrb : build/$(APP).o $(LIBAPI_BUILD_PATH)libapi.a $(LIBCOMMON_BUILD_PATH)libcommon.a Makefile ../api.ls ../app_make.txt
+	ld -m elf_i386 -e HariMain -o build/$(APP).hrb -T../api.ls -Map=build/$(APP).map build/$(APP).o $(LIBAPI_BUILD_PATH)libapi.a $(LIBCOMMON_BUILD_PATH)libcommon.a
+
+build/hariboteos.img : $(HARIBOTE_BUILD_PATH)ipl10.bin $(HARIBOTE_BUILD_PATH)os.sys Makefile build/$(APP).hrb Makefile ../app_make.txt
+	mformat -f 1440 -C -B $(HARIBOTE_BUILD_PATH)ipl10.bin -i build/hariboteos.img ::
+	mcopy -i build/hariboteos.img $(HARIBOTE_BUILD_PATH)os.sys ::
+	mcopy -i build/hariboteos.img Makefile ::
+	mcopy -i build/hariboteos.img build/$(APP).hrb ::
+
+# 一般規則
+
+build/%.o : %.c ../libapi.h ../libcommon.h Makefile ../app_make.txt build/
+	gcc -O0 -c -m32 -fno-pic -nostdlib -iquote .. -o build/$*.o $*.c
+
+build/%.o : %.asm Makefile ../app_make.txt build/
+	nasm -f elf32 -o build/$*.o $*.asm
+
+# コマンド
+full :
+	make -C $(LIBAPI_PATH)
+	make -C $(LIBCOMMON_PATH)
+	make build/$(APP).hrb
+
+run_full :
+	make -C $(LIBAPI_PATH)
+	make -C $(LIBCOMMON_PATH)
+	make -C $(HARIBOTE_PATH)
+	make run
+
+run :
+	make build/hariboteos.img
+	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -m 32M
+
+debug :
+	make build/hariboteos.img
+	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S -monitor stdio
+
+clean :
+	-rm build/*.bin build/*.lst build/*.sys build/*.map build/*.o build/haribote.img
+
+src_only :
+	-rm -r build

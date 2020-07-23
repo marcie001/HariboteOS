@@ -2,6 +2,7 @@
 // Created by marcie on 2020/05/02.
 //
 #include "bootpack.h"
+#include "libcommon.h"
 
 void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int memtotal);
 

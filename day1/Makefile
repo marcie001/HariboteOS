@@ -1,146 +1,97 @@
-OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/mysprintf.o build/mystring.o build/nasmfunc.o build/dsctbl.o build/graphic.o build/int.o build/fifo.o build/keyboard.o build/mouse.o build/memory.o build/sheet.o build/timer.o build/mtask.o build/window.o build/console.o build/file.o
-OBJS_API = build/api001.o build/api001.o build/api002.o build/api003.o build/api004.o build/api005.o build/api006.o build/api007.o build/api008.o build/api009.o build/api010.o build/api011.o build/api012.o build/api013.o build/api014.o build/api015.o build/api016.o build/api017.o build/api018.o build/api019.o build/api020.o
 # デフォルト動作
 
 default :
-	make run
+	make build/haribote.img
 
 # ファイル生成規則
 
-build/asmhead.bin : asmhead.asm Makefile
-	nasm -l build/asmhead.lst -o build/asmhead.bin asmhead.asm
+build/ :
+	mkdir build
 
-build/bootpack.bin: $(OBJS_BOOTPACK) Makefile
-	ld -m elf_i386 -e HariMain -o build/bootpack.bin -Tos.ls -Map=build/bootpack.map $(OBJS_BOOTPACK)
-
-build/libapi.a: $(OBJS_API) Makefile
-	ar rcs build/libapi.a $(OBJS_API)
-
-build/hello.hrb: build/hello.o Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/hello.hrb -Tapi.ls -Map=build/hello.map build/hello.o
-
-build/hello2.hrb: build/hello2.o Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/hello2.hrb -Tapi.ls -Map=build/hello2.map build/hello2.o
-
-build/a.hrb: build/a.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/a.hrb -Tapi.ls -Map=build/a.map build/a.o build/libapi.a
-
-build/hello3.hrb: build/hello3.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/hello3.hrb -Tapi.ls -Map=build/hello3.map build/hello3.o build/libapi.a
-
-build/hello4.hrb: build/hello4.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/hello4.hrb -Tapi.ls -Map=build/hello4.map build/hello4.o build/libapi.a
-
-build/winhelo.hrb: build/winhelo.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/winhelo.hrb -Tapi.ls -Map=build/winhelo.map build/winhelo.o build/libapi.a
-
-build/star1.hrb: build/star1.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/star1.hrb -Tapi.ls -Map=build/star1.map build/star1.o build/libapi.a
-
-build/lines.hrb: build/lines.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/lines.hrb -Tapi.ls -Map=build/lines.map build/lines.o build/libapi.a
-
-build/walk.hrb: build/walk.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/walk.hrb -Tapi.ls -Map=build/walk.map build/walk.o build/libapi.a
-
-build/noodle.hrb: build/noodle.o build/libapi.a build/mysprintf.o Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/noodle.hrb -Tapi.ls -Map=build/noodle.map build/noodle.o build/libapi.a build/mysprintf.o
-
-build/beepdown.hrb: build/beepdown.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/beepdown.hrb -Tapi.ls -Map=build/beepdown.map build/beepdown.o build/libapi.a
-
-build/color.hrb: build/color.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/color.hrb -Tapi.ls -Map=build/color.map build/color.o build/libapi.a
-
-build/crack1.hrb: build/crack1.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/crack1.hrb -Tapi.ls -Map=build/crack1.map build/crack1.o build/libapi.a
-
-build/crack2.hrb: crack2.asm Makefile
-	nasm -l build/crack2.lst -o build/crack2.hrb crack2.asm
-
-build/crack3.hrb: crack3.asm Makefile
-	nasm -l build/crack3.lst -o build/crack3.hrb crack3.asm
-
-build/crack4.hrb: crack4.asm Makefile
-	nasm -l build/crack4.lst -o build/crack4.hrb crack4.asm
-
-build/crack5.hrb: crack5.asm Makefile
-	nasm -l build/crack5.lst -o build/crack5.hrb crack5.asm
-
-build/crack7.hrb: build/crack7.o Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/crack7.hrb -Tapi.ls -Map=build/crack7.map build/crack7.o
-
-build/bug1.hrb: build/bug1.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/bug1.hrb -Tapi.ls -Map=build/bug1.map build/bug1.o build/libapi.a
-
-build/bug2.hrb: build/bug2.o build/libapi.a Makefile api.ls
-	ld -m elf_i386 -e HariMain -o build/bug2.hrb -Tapi.ls -Map=build/bug2.map build/bug2.o build/libapi.a
-
-build/os.sys: build/asmhead.bin build/bootpack.bin Makefile
-	cat build/asmhead.bin build/bootpack.bin > build/os.sys
-
-build/ipl10.bin : ipl10.asm Makefile
-	nasm -l build/ipl10.lst -o build/ipl10.bin ipl10.asm
-
-build/haribote.sys : haribote.asm Makefile
-	nasm -l build/haribote.lst -o build/haribote.sys haribote.asm
-
-build/hariboteos.img : build/ipl10.bin build/os.sys Makefile testfile build/hello.hrb build/hello2.hrb build/a.hrb build/hello3.hrb build/hello4.hrb build/winhelo.hrb build/star1.hrb build/lines.hrb build/walk.hrb build/noodle.hrb build/beepdown.hrb build/color.hrb build/crack1.hrb build/crack2.hrb build/crack3.hrb build/crack4.hrb build/crack5.hrb build/crack7.hrb build/bug1.hrb build/bug2.hrb
-	mformat -f 1440 -C -B build/ipl10.bin -i build/hariboteos.img ::
-	mcopy -i build/hariboteos.img build/os.sys ::
+build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys Makefile \
+		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
+		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
+		beepdown/build/beepdown.hrb color/build/color.hrb 
+	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
+	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
-	mcopy -i build/hariboteos.img testfile ::
-	mcopy -i build/hariboteos.img build/hello.hrb ::
-	mcopy -i build/hariboteos.img build/hello2.hrb ::
-	mcopy -i build/hariboteos.img build/a.hrb ::
-	mcopy -i build/hariboteos.img build/hello3.hrb ::
-	mcopy -i build/hariboteos.img build/hello4.hrb ::
-	mcopy -i build/hariboteos.img build/winhelo.hrb ::
-	mcopy -i build/hariboteos.img build/star1.hrb ::
-	mcopy -i build/hariboteos.img build/lines.hrb ::
-	mcopy -i build/hariboteos.img build/walk.hrb ::
-	mcopy -i build/hariboteos.img build/noodle.hrb ::
-	mcopy -i build/hariboteos.img build/beepdown.hrb ::
-	mcopy -i build/hariboteos.img build/color.hrb ::
-	mcopy -i build/hariboteos.img build/crack1.hrb ::
-	mcopy -i build/hariboteos.img build/crack2.hrb ::
-	mcopy -i build/hariboteos.img build/crack3.hrb ::
-	mcopy -i build/hariboteos.img build/crack4.hrb ::
-	mcopy -i build/hariboteos.img build/crack5.hrb ::
-	mcopy -i build/hariboteos.img build/crack7.hrb ::
-	mcopy -i build/hariboteos.img build/bug1.hrb ::
-	mcopy -i build/hariboteos.img build/bug2.hrb ::
-
-# 一般規則
-
-build/%.o: %.c bootpack.h libapi.h Makefile
-	gcc -O0 -c -m32 -fno-pic -nostdlib -o build/$*.o $*.c
-
-build/%.o: %.asm Makefile
-	nasm -f elf32 -o build/$*.o $*.asm
+	mcopy -i build/hariboteos.img a/build/a.hrb ::
+	mcopy -i build/hariboteos.img hello3/build/hello3.hrb ::
+	mcopy -i build/hariboteos.img hello4/build/hello4.hrb ::
+	mcopy -i build/hariboteos.img winhelo/build/winhelo.hrb ::
+	mcopy -i build/hariboteos.img star1/build/star1.hrb ::
+	mcopy -i build/hariboteos.img lines/build/lines.hrb ::
+	mcopy -i build/hariboteos.img walk/build/walk.hrb ::
+	mcopy -i build/hariboteos.img noodle/build/noodle.hrb ::
+	mcopy -i build/hariboteos.img beepdown/build/beepdown.hrb ::
+	mcopy -i build/hariboteos.img color/build/color.hrb ::
 
 # コマンド
-asm :
-	make -r build/ipl10.bin
-
-img :
-	make -r build/hariboteos.img
-
 run :
-	make img
+	make build/hariboteos.img
 	qemu-system-i386 -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -m 32M
 
-run-vb :
-	make img
-	virtualbox --startvm HariboteOS
-
 debug :
-	make img
+	make build/hariboteos.img
 	qemu-system-i386 -m 32 -localtime -vga std -drive file=build/hariboteos.img,index=0,if=floppy,format=raw -gdb tcp::10000 -S -monitor stdio
 
+full :
+	make -C libcommon
+	make -C haribote
+	make -C libapi
+	make -C a
+	make -C hello3
+	make -C hello4
+	make -C winhelo
+	make -C star1
+	make -C lines
+	make -C walk
+	make -C noodle
+	make -C beepdown
+	make -C color
+	make build/hariboteos.img
+
+run_full :
+	make full
+	make run
+
+run_full_vb :
+	make full
+	virtualbox --startvm HariboteOS
+
 clean :
-	-rm build/*.bin build/*.lst build/*.sys
+# do nothing
 
 src_only :
 	-rm -r build
 	mkdir build
+
+clean_full :
+	make -C libcommon clean
+	make -C haribote clean
+	make -C libapi clean
+	make -C a clean
+	make -C hello3 clean
+	make -C hello4 clean
+	make -C winhelo clean
+	make -C star1 clean
+	make -C lines clean
+	make -C walk clean
+	make -C noodle clean
+	make -C beepdown clean
+	make -C color clean
+
+src_only_full :
+	make -C libcommon src_only
+	make -C haribote src_only
+	make -C libapi src_only
+	make -C a src_only
+	make -C hello3 src_only
+	make -C hello4 src_only
+	make -C winhelo src_only
+	make -C star1 src_only
+	make -C lines src_only
+	make -C walk src_only
+	make -C noodle src_only
+	make -C beepdown src_only
+	make -C color src_only
