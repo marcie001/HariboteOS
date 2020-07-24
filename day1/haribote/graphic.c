@@ -120,10 +120,24 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font) {
  */
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s) {
     extern char hankaku[4096];
-    for (; *s != 0x00; s++) {
-        putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
-        x += 8;
+    struct TASK *task = task_now();
+    char *nihongo = (char *) *((int *) 0x0fe8);
+
+    switch (task->langmode) {
+        case 0:
+            for (; *s != 0x00; s++) {
+                putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
+                x += 8;
+            }
+            break;
+        case 1:
+            for (; *s != 0x00; s++) {
+                putfont8(vram, xsize, x, y, c, nihongo + *s * 16);
+                x += 8;
+            }
+            break;
     }
+    return;
 }
 
 

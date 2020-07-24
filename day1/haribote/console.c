@@ -22,6 +22,8 @@ void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
 
 void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
 
+void cmd_langmode(struct CONSOLE *cons, char *cmdline);
+
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
     char cmdline[30];
     struct TASK *task = task_now();
@@ -52,6 +54,13 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     }
     task->fhandle = fhandle;
     task->fat = fat;
+
+    unsigned char *nihongo = (char *) *((int *) 0x0fe8);
+    if (nihongo[4096] != 0xff) {
+        task->langmode = 1;
+    } else {
+        task->langmode = 0;
+    }
 
     while (1) {
         io_cli();
@@ -248,12 +257,28 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
         // 新しいコンソールの出てこない start コマンド
         // no console start
         cmd_ncst(cons, cmdline, memtotal);
+    } else if (myindexof(cmdline, "langmode ") == 0) {
+        // 新しいコンソールの出てこない start コマンド
+        // no console start
+        cmd_langmode(cons, cmdline);
     } else if (cmdline[0] != 0) {
         if (cmd_app(cons, fat, cmdline) == 0) {
             // 存在しないコマンドの実行
             cons_putstr0(cons, "Bad command\n\n");
         }
     }
+    return;
+}
+
+void cmd_langmode(struct CONSOLE *cons, char *cmdline) {
+    struct TASK *task = task_now();
+    unsigned char mode = cmdline[9] - '0';
+    if (mode <= 1) {
+        task->langmode = mode;
+    } else {
+        cons_putstr0(cons, "mode number error.\n");
+    }
+    cons_newline(cons);
     return;
 }
 

@@ -9,11 +9,11 @@ build/ :
 	mkdir build
 
 build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
-		Makefile testfile \
+		Makefile testfile nihongo/nihongo.fnt \
 		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
 		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb cat/build/cat.hrb \
-        head/build/head.hrb
+        head/build/head.hrb iroha/build/iroha.hrb
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
@@ -31,6 +31,8 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
 	mcopy -i build/hariboteos.img sosu/build/sosu.hrb ::
 	mcopy -i build/hariboteos.img cat/build/cat.hrb ::
 	mcopy -i build/hariboteos.img head/build/head.hrb ::
+	mcopy -i build/hariboteos.img iroha/build/iroha.hrb ::
+	mcopy -i build/hariboteos.img nihongo/nihongo.fnt ::
 
 # コマンド
 run :
@@ -58,6 +60,7 @@ full :
 	make -C sosu
 	make -C cat
 	make -C head
+	make -C iroha
 	make build/hariboteos.img
 
 run_full :
@@ -92,6 +95,7 @@ clean_full :
 	make -C sosu clean
 	make -C cat clean
 	make -C head clean
+	make -C iroha clean
 
 src_only_full :
 	make -C libcommon src_only
@@ -109,4 +113,4 @@ src_only_full :
 	make -C color src_only
 	make -C sosu src_only
 	make -C cat src_only
-	make -C head src_only
+	make -C iroha src_only
