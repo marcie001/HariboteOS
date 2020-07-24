@@ -8,13 +8,16 @@ default :
 build/ :
 	mkdir build
 
-build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys Makefile \
+build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
+		Makefile testfile \
 		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
-		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb
+		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb cat/build/cat.hrb \
+        head/build/head.hrb
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
+	mcopy -i build/hariboteos.img testfile ::
 	mcopy -i build/hariboteos.img a/build/a.hrb ::
 	mcopy -i build/hariboteos.img hello3/build/hello3.hrb ::
 	mcopy -i build/hariboteos.img hello4/build/hello4.hrb ::
@@ -26,6 +29,8 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys Mak
 	mcopy -i build/hariboteos.img beepdown/build/beepdown.hrb ::
 	mcopy -i build/hariboteos.img color/build/color.hrb ::
 	mcopy -i build/hariboteos.img sosu/build/sosu.hrb ::
+	mcopy -i build/hariboteos.img cat/build/cat.hrb ::
+	mcopy -i build/hariboteos.img head/build/head.hrb ::
 
 # コマンド
 run :
@@ -51,6 +56,8 @@ full :
 	make -C beepdown
 	make -C color
 	make -C sosu
+	make -C cat
+	make -C head
 	make build/hariboteos.img
 
 run_full :
@@ -83,6 +90,8 @@ clean_full :
 	make -C beepdown clean
 	make -C color clean
 	make -C sosu clean
+	make -C cat clean
+	make -C head clean
 
 src_only_full :
 	make -C libcommon src_only
@@ -99,3 +108,5 @@ src_only_full :
 	make -C beepdown src_only
 	make -C color src_only
 	make -C sosu src_only
+	make -C cat src_only
+	make -C head src_only

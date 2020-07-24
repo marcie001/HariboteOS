@@ -12,8 +12,6 @@ void cmd_clear(struct CONSOLE *cons);
 
 void cmd_ls(struct CONSOLE *cons);
 
-void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline);
-
 void cmd_exit(struct CONSOLE *cons, int *fat);
 
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
@@ -25,6 +23,7 @@ void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal);
 void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
 
 void console_task(struct SHEET *sheet, unsigned int memtotal) {
+    char cmdline[30];
     struct TASK *task = task_now();
 
     struct CONSOLE cons;
@@ -33,6 +32,7 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     cons.cur_y = 28;
     cons.cur_c = -1;
     task->cons = &cons;
+    task->cmdline = cmdline;
 
     if (cons.sht != 0) {
         cons.timer = timer_alloc();
@@ -43,11 +43,16 @@ void console_task(struct SHEET *sheet, unsigned int memtotal) {
     // プロンプト表示
     cons_putchar(&cons, '>', 1);
 
-    char cmdline[30];
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    int i;
-    int *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
+    int i, *fat = (int *) memman_alloc_4k(memman, 4 * 2880);
     file_readfat(fat, (unsigned char *) (ADR_DISKIMG + 0x000200));
+    struct FILEHANDLE fhandle[8];
+    for (i = 0; i < 8; ++i) {
+        fhandle[i].buf = 0; // 未使用マーク
+    }
+    task->fhandle = fhandle;
+    task->fat = fat;
+
     while (1) {
         io_cli();
         if (fifo32_status(&task->fifo) == 0) {
@@ -235,8 +240,6 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, unsigned int mem
         cmd_clear(cons);
     } else if (mystrcmp(cmdline, "ls") == 0 && cons->sht != 0) {
         cmd_ls(cons);
-    } else if (myindexof(cmdline, "cat ") == 0 && cons->sht != 0) {
-        cmd_cat(cons, fat, cmdline);
     } else if (mystrcmp(cmdline, "exit") == 0) {
         cmd_exit(cons, fat);
     } else if (myindexof(cmdline, "start ") == 0) {
@@ -305,6 +308,13 @@ int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline) {
                 if ((sht->flags & 0x11) == 0x11 && sht->task == task) {
                     // アプリが開きっぱなしにした下敷きを発見
                     sheet_free(sht); // 閉じる
+                }
+            }
+            // クローズしていないファイルをクローズ
+            for (int i = 0; i < 8; ++i) {
+                if (task->fhandle[i].buf != 0) {
+                    memman_free_4k(memman, (int) task->fhandle->buf, task->fhandle[i].size);
+                    task->fhandle[i].buf = 0;
                 }
             }
             timer_cancelall(&task->fifo);
@@ -379,23 +389,6 @@ void cmd_ls(struct CONSOLE *cons) {
     return;
 }
 
-void cmd_cat(struct CONSOLE *cons, int *fat, char *cmdline) {
-    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
-    struct FILEINFO *finfo = file_search(cmdline + 4, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
-    char *p;
-    if (finfo != 0) {
-        p = (char *) memman_alloc_4k(memman, finfo->size);
-        file_loadfile(finfo->clustno, finfo->size, p, fat, (char *) (ADR_DISKIMG + 0x003e00));
-        cons_putstr1(cons, p, finfo->size);
-        memman_free_4k(memman, (int) p, finfo->size);
-    } else {
-        // ファイルがみつからなかった場合
-        cons_putstr0(cons, "File not found.\n");
-    }
-    cons_newline(cons);
-    return;
-}
-
 void cmd_exit(struct CONSOLE *cons, int *fat) {
     struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     struct TASK *task = task_now();
@@ -462,6 +455,9 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
     int *reg = &eax + 1; // eax の次の番地
     int i;
     struct FIFO32 *sys_fifo = (struct FIFO32 *) *((int *) 0x0fec);
+    struct FILEINFO *finfo;
+    struct FILEHANDLE *fh;
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
     /*
      * 保存のための PUSHAD を強引に書き換える。
      * reg[0]: EDI
@@ -688,6 +684,122 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
                 i = io_in8(0x61);
                 io_out8(0x61, (i | 0x03) & 0x0f);
             }
+            break;
+        case 21:
+            // ファイルのオープン
+            // EDX: 21
+            // EBX: ファイル名
+            // EAX: ファイルハンドル。 0 だったらオープン失敗。 OS から返される
+            for (i = 0; i < 8; i++) {
+                if (task->fhandle[i].buf == 0) {
+                    break;
+                }
+            }
+            fh = &task->fhandle[i];
+            reg[7] = 0;
+            if (i < 8) {
+                finfo = file_search((char *) ebx + ds_base, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+                if (finfo != 0) {
+                    reg[7] = (int) fh;
+                    fh->buf = (char *) memman_alloc_4k(memman, finfo->size);
+                    fh->size = finfo->size;
+                    fh->pos = 0;
+                    file_loadfile(finfo->clustno, finfo->size, fh->buf, task->fat, (char *) (ADR_DISKIMG + 0x003e00));
+                }
+            }
+            break;
+        case 22:
+            // ファイルのクローズ
+            // EDX: 22
+            // EAX: ファイルハンドル
+            fh = (struct FILEHANDLE *) eax;
+            memman_free_4k(memman, (int) fh->buf, fh->size);
+            fh->buf = 0;
+            break;
+        case 23:
+            // ファイルのシーク
+            // EDX: 23
+            // EAX: ファイルハンドル
+            // ECX: シークモード
+            //      0=シークの原点はファイルの先頭
+            //      1=シークの原点はファイルの現在のアクセス位置
+            //      2=シークの原点はファイルの終点
+            fh = (struct FILEHANDLE *) eax;
+            switch (ecx) {
+                case 0:
+                    fh->pos = ebx;
+                    break;
+                case 1:
+                    fh->pos += ebx;
+                    break;
+                case 2:
+                    fh->pos = fh->size + ebx;
+                    break;
+            }
+            if (fh->pos < 0) {
+                fh->pos = 0;
+            }
+            if (fh->pos > fh->size) {
+                fh->pos = fh->size;
+            }
+            break;
+        case 24:
+            // ファイルサイズの取得
+            // EDX: 24
+            // EAX: ファイルハンドル
+            // ECX: ファイルサイズ取得モード
+            //      0=普通のファイルサイズ
+            //      1=現在の読み込み位置はファイル先頭から何バイト目か
+            //      2=ファイル終端からみた現在位置までのバイト数
+            // EAX: ファイルサイズ。 OS から返される
+            fh = (struct FILEHANDLE *) eax;
+            switch (ecx) {
+                case 0:
+                    reg[7] = fh->size;
+                    break;
+                case 1:
+                    reg[7] = fh->pos;
+                    break;
+                case 2:
+                    reg[7] = fh->pos - fh->size;
+                    break;
+            }
+            break;
+        case 25:
+            // ファイルの読み込み
+            // EDX: 25
+            // EAX: ファイルハンドル
+            // EBX: バッファの番地
+            // ECX: 最大読み込みバイト数
+            // EAX: 今回読み込めたバイト数。 OS から返される
+            fh = (struct FILEHANDLE *) eax;
+            for (i = 0; i < ecx; ++i) {
+                if (fh->pos == fh->size) {
+                    break;
+                }
+                *((char *) ebx + ds_base + i) = fh->buf[fh->pos];
+                fh->pos++;
+            }
+            reg[7] = i;
+            break;
+        case 26:
+            // コマンドラインの取得
+            // EDX: 26
+            // EBX: コマンドラインを格納する番地
+            // ECX: 何バイトまで格納できるか
+            // EAX: 何バイト格納したか。 OS から返される
+            i = 0;
+            while (1) {
+                *((char *) ebx + ds_base + i) = task->cmdline[i];
+                if (task->cmdline[i] == 0) {
+                    break;
+                }
+                if (i >= ecx) {
+                    break;
+                }
+                i++;
+            }
+            reg[7] = i;
             break;
     }
     return 0;
