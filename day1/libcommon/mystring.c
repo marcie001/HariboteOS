@@ -70,3 +70,13 @@ int mymemcmp(unsigned char *s1, unsigned char *s2, int n) {
     }
     return 0;
 }
+
+int mystrlen(unsigned char *s) {
+    int i;
+    for (i = 0;; i++) {
+        if (*s == 0) {
+            return i;
+        }
+        s++;
+    }
+}

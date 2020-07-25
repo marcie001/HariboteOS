@@ -14,7 +14,7 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
 		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb cat/build/cat.hrb \
         head/build/head.hrb hexdump/build/hexdump.hrb iroha/build/iroha.hrb chklang/build/chklang.hrb \
-        notrec/build/notrec.hrb bball/build/bball.hrb
+        notrec/build/notrec.hrb bball/build/bball.hrb invader/build/invader.hrb
 
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
@@ -41,6 +41,7 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
 	mcopy -i build/hariboteos.img chklang/build/chklang.hrb ::
 	mcopy -i build/hariboteos.img notrec/build/notrec.hrb ::
 	mcopy -i build/hariboteos.img bball/build/bball.hrb ::
+	mcopy -i build/hariboteos.img invader/build/invader.hrb ::
 
 # コマンド
 run :
@@ -73,6 +74,7 @@ full :
 	make -C chklang
 	make -C notrec
 	make -C bball
+	make -C invader
 	make build/hariboteos.img
 
 run_full :
@@ -112,6 +114,7 @@ clean_full :
 	make -C chklang clean
 	make -C notrec clean
 	make -C bball clean
+	make -C invader clean
 
 src_only_full :
 	make -C libcommon src_only
@@ -135,3 +138,4 @@ src_only_full :
 	make -C chklang src_only
 	make -C notrec src_only
 	make -C bball src_only
+	make -C invader src_only
