@@ -9,16 +9,17 @@ build/ :
 	mkdir build
 
 build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
-		Makefile testfile sjisfile nihongo/nihongo.fnt \
+		Makefile utf8file sjisfile eucfile nihongo/nihongo.fnt \
 		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
 		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb cat/build/cat.hrb \
-        head/build/head.hrb hexdump/build/hexdump.hrb iroha/build/iroha.hrb
+        head/build/head.hrb hexdump/build/hexdump.hrb iroha/build/iroha.hrb chklang/build/chklang.hrb
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
-	mcopy -i build/hariboteos.img testfile ::
+	mcopy -i build/hariboteos.img utf8file ::
 	mcopy -i build/hariboteos.img sjisfile ::
+	mcopy -i build/hariboteos.img eucfile ::
 	mcopy -i build/hariboteos.img a/build/a.hrb ::
 	mcopy -i build/hariboteos.img hello3/build/hello3.hrb ::
 	mcopy -i build/hariboteos.img hello4/build/hello4.hrb ::
@@ -35,6 +36,7 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
 	mcopy -i build/hariboteos.img iroha/build/iroha.hrb ::
 	mcopy -i build/hariboteos.img nihongo/nihongo.fnt ::
 	mcopy -i build/hariboteos.img hexdump/build/hexdump.hrb ::
+	mcopy -i build/hariboteos.img chklang/build/chklang.hrb ::
 
 # コマンド
 run :
@@ -64,6 +66,7 @@ full :
 	make -C head
 	make -C hexdump
 	make -C iroha
+	make -C chklang
 	make build/hariboteos.img
 
 run_full :
@@ -100,6 +103,7 @@ clean_full :
 	make -C head clean
 	make -C hexdump clean
 	make -C iroha clean
+	make -C chklang clean
 
 src_only_full :
 	make -C libcommon src_only
@@ -117,4 +121,7 @@ src_only_full :
 	make -C color src_only
 	make -C sosu src_only
 	make -C cat src_only
+	make -C head src_only
+	make -C hexdump src_only
 	make -C iroha src_only
+	make -C chklang src_only
