@@ -621,6 +621,16 @@ int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int 
             sht = (struct SHEET *) (ebx & 0xfffffffe);
             hrb_api_linewin(sht, eax, ecx, esi, edi, ebp);
             if ((ebx & 1) == 0) {
+                if (eax > esi) {
+                    i = eax;
+                    eax = esi;
+                    esi = i;
+                }
+                if (ecx > edi) {
+                    i = ecx;
+                    ecx = edi;
+                    edi = i;
+                }
                 sheet_refresh(sht, eax, ecx, esi + 1, edi + 1);
             }
             break;
@@ -923,7 +933,7 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
         if (x0 <= x1) {
             dx = ((x1 - x0 + 1) << 10) / len;
         } else {
-            dx = ((y1 - x0 - 1) << 10) / len;
+            dx = ((x1 - x0 - 1) << 10) / len;
         }
     }
     for (i = 0; i < len; ++i) {
