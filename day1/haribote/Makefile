@@ -1,4 +1,4 @@
-OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/nasmfunc.o build/dsctbl.o build/graphic.o build/int.o build/fifo.o build/keyboard.o build/mouse.o build/memory.o build/sheet.o build/timer.o build/mtask.o build/window.o build/console.o build/file.o
+OBJS_BOOTPACK = build/bootpack.o build/hankaku.o build/nasmfunc.o build/dsctbl.o build/graphic.o build/int.o build/fifo.o build/keyboard.o build/mouse.o build/memory.o build/sheet.o build/timer.o build/mtask.o build/window.o build/console.o build/file.o build/tek.o
 LIBCOMMON_PATH = ../libcommon/
 LIBCOMMON_BUILD_PATH = $(LIBCOMMON_PATH)build/
 # デフォルト動作
