@@ -1,0 +1,24 @@
+#! /bin/sh
+
+set -e
+
+if [ $# -ne 1 ]; then
+  echo "input application name!" 1>&2
+  exit 1
+fi
+
+if [ -d "$1" ]; then
+  echo "application already exists."
+  exit
+fi
+
+mkdir "$1"
+echo "#include \"libapi.h\"
+
+void HariMain(void) {
+    api_end();
+}" > "$1/$1.c"
+
+echo "APP = $1
+
+include ../app_make.txt" > "$1/Makefile"
