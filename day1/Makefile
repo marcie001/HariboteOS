@@ -9,15 +9,16 @@ build/ :
 	mkdir build
 
 build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
-		Makefile testfile nihongo/nihongo.fnt \
+		Makefile testfile sjisfile nihongo/nihongo.fnt \
 		a/build/a.hrb hello3/build/hello3.hrb hello4/build/hello4.hrb winhelo/build/winhelo.hrb \
 		star1/build/star1.hrb lines/build/lines.hrb walk/build/walk.hrb noodle/build/noodle.hrb \
 		beepdown/build/beepdown.hrb color/build/color.hrb sosu/build/sosu.hrb cat/build/cat.hrb \
-        head/build/head.hrb iroha/build/iroha.hrb
+        head/build/head.hrb hexdump/build/hexdump.hrb iroha/build/iroha.hrb
 	mformat -f 1440 -C -B haribote/build/ipl10.bin -i build/hariboteos.img ::
 	mcopy -i build/hariboteos.img haribote/build/os.sys ::
 	mcopy -i build/hariboteos.img Makefile ::
 	mcopy -i build/hariboteos.img testfile ::
+	mcopy -i build/hariboteos.img sjisfile ::
 	mcopy -i build/hariboteos.img a/build/a.hrb ::
 	mcopy -i build/hariboteos.img hello3/build/hello3.hrb ::
 	mcopy -i build/hariboteos.img hello4/build/hello4.hrb ::
@@ -33,6 +34,7 @@ build/hariboteos.img : build/ haribote/build/ipl10.bin haribote/build/os.sys \
 	mcopy -i build/hariboteos.img head/build/head.hrb ::
 	mcopy -i build/hariboteos.img iroha/build/iroha.hrb ::
 	mcopy -i build/hariboteos.img nihongo/nihongo.fnt ::
+	mcopy -i build/hariboteos.img hexdump/build/hexdump.hrb ::
 
 # コマンド
 run :
@@ -60,6 +62,7 @@ full :
 	make -C sosu
 	make -C cat
 	make -C head
+	make -C hexdump
 	make -C iroha
 	make build/hariboteos.img
 
@@ -95,6 +98,7 @@ clean_full :
 	make -C sosu clean
 	make -C cat clean
 	make -C head clean
+	make -C hexdump clean
 	make -C iroha clean
 
 src_only_full :

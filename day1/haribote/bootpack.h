@@ -321,6 +321,7 @@ struct TASK {
     int *fat;
     char *cmdline;
     char langmode;
+    unsigned char langbyte1;
 };
 
 struct FILEHANDLE {
